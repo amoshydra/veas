@@ -34,6 +34,7 @@ export default function Editor() {
   const queryClient = useQueryClient();
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<FileItem | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const { data: filesData, isLoading: filesLoading } = useQuery({
@@ -153,22 +154,36 @@ export default function Editor() {
           ) : (
             <div className="space-y-2">
               {files.map((f) => (
-                <button
+                <div
                   key={f.id}
-                  onClick={() => setSelectedFileId(f.id)}
-                  className={`w-full text-left p-2 rounded text-sm transition-colors ${
+                  className={`flex items-center gap-2 p-2 rounded text-sm transition-colors ${
                     f.id === selectedFileId
                       ? "bg-blue-900 border border-blue-600"
-                      : "bg-slate-800 border border-transparent hover:bg-slate-700"
+                      : "bg-slate-800 border border-transparent"
                   }`}
                 >
-                  <div className="font-medium truncate">{f.filename}</div>
-                  <div className="text-xs text-slate-400">
-                    {f.duration ? `${f.duration.toFixed(1)}s` : ""}{" "}
-                    {f.width && f.height ? `${f.width}×${f.height}` : ""}
-                    {" "}{(f.size / 1024 / 1024).toFixed(1)}MB
-                  </div>
-                </button>
+                  <button
+                    onClick={() => setSelectedFileId(f.id)}
+                    className="flex-1 text-left min-w-0"
+                  >
+                    <div className="font-medium truncate">{f.filename}</div>
+                    <div className="text-xs text-slate-400">
+                      {f.duration ? `${f.duration.toFixed(1)}s` : ""}{" "}
+                      {f.width && f.height ? `${f.width}×${f.height}` : ""}
+                      {" "}{(f.size / 1024 / 1024).toFixed(1)}MB
+                    </div>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteConfirm(f);
+                    }}
+                    className="shrink-0 px-2 py-1 text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded text-xs"
+                    title="Delete file"
+                  >
+                    Delete
+                  </button>
+                </div>
               ))}
               <label className="block w-full py-2 px-4 border border-dashed border-slate-600 rounded text-center text-slate-400 text-sm cursor-pointer hover:border-slate-500">
                 <input
@@ -237,6 +252,51 @@ export default function Editor() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Delete file confirmation modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setDeleteConfirm(null)}
+          />
+          <div className="relative bg-slate-800 rounded-xl p-5 w-full max-w-sm space-y-4">
+            <h2 className="text-lg font-semibold">Delete File</h2>
+            <p className="text-sm text-slate-300">
+              Delete <strong>"{deleteConfirm.filename}"</strong>?
+              {deleteConfirm.duration && (
+                <span className="text-slate-400">
+                  {" "}({deleteConfirm.duration.toFixed(1)}s, {(deleteConfirm.size / 1024 / 1024).toFixed(1)} MB)
+                </span>
+              )}
+            </p>
+            <p className="text-sm text-slate-400">
+              This will permanently remove the file from disk.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded font-medium text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  await api.deleteFile(deleteConfirm.id);
+                  if (selectedFileId === deleteConfirm.id) {
+                    setSelectedFileId(null);
+                  }
+                  queryClient.invalidateQueries({ queryKey: ["files", sessionId] });
+                  setDeleteConfirm(null);
+                }}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-500 rounded font-medium text-sm transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

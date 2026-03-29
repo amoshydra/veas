@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";
-import { createWriteStream, statSync, createReadStream, existsSync } from "node:fs";
+import { createWriteStream, statSync, createReadStream, existsSync, rmSync } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { join, extname } from "node:path";
 import { db } from "../db/index.js";
@@ -130,6 +130,23 @@ filesRoute.get("/:id/thumbnail", async (c) => {
       "Cache-Control": "public, max-age=86400",
     },
   });
+});
+
+filesRoute.delete("/:id", (c) => {
+  const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
+  if (!file) return c.json({ error: "File not found" }, 404);
+
+  // Delete from disk
+  try { rmSync(file.path, { force: true }); } catch {}
+
+  // Delete thumbnail if exists
+  const thumbPath = file.path.replace(extname(file.path), "_thumb.jpg");
+  try { rmSync(thumbPath, { force: true }); } catch {}
+
+  // Delete from DB
+  db.delete(files).where(eq(files.id, file.id)).run();
+
+  return c.json({ ok: true });
 });
 
 export default filesRoute;
