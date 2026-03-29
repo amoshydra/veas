@@ -82,7 +82,7 @@ export default function Editor() {
               controls
               playsInline
             />
-            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-xs text-slate-300 bg-black/60 px-2 py-1 rounded">
+            <div className="absolute top-2 left-2 right-2 flex items-center justify-between text-xs text-slate-300 bg-black/60 px-2 py-1 rounded">
               <span className="truncate">{selectedFile.filename}</span>
               <span className="shrink-0 ml-2">
                 {selectedFile.duration ? `${selectedFile.duration.toFixed(1)}s` : ""}
