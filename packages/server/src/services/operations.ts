@@ -1,3 +1,36 @@
+function normalizeTime(time: string): string {
+  // Handle plain seconds: "10" or "10.5"
+  if (/^\d+(\.\d+)?$/.test(time)) {
+    const secs = parseFloat(time);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
+  }
+
+  // Handle "M:SS" or "MM:SS" format: "0:10" or "1:30"
+  if (/^\d{1,2}:\d{1,2}(\.\d+)?$/.test(time)) {
+    const parts = time.split(":");
+    const m = parseInt(parts[0]);
+    const s = parseFloat(parts[1]);
+    const h = Math.floor(m / 60);
+    const mRem = m % 60;
+    return `${String(h).padStart(2, "0")}:${String(mRem).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
+  }
+
+  // Handle "H:MM:SS" format: "0:00:10" or "1:23:45"
+  const match = time.match(/^(\d{1,2}):(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/);
+  if (match) {
+    const h = parseInt(match[1]);
+    const m = parseInt(match[2]);
+    const s = parseFloat(match[3]);
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
+  }
+
+  // Already in "HH:MM:SS.mmm" format or unrecognized — return as-is
+  return time;
+}
+
 export function buildFfmpegArgs(
   operation: string,
   inputFiles: string[],
@@ -8,9 +41,9 @@ export function buildFfmpegArgs(
   switch (operation) {
     case "trim": {
       const args: string[] = [];
-      if (params.start) args.push("-ss", String(params.start));
+      if (params.start) args.push("-ss", normalizeTime(String(params.start)));
       args.push("-i", inputFiles[0]);
-      if (params.end) args.push("-to", String(params.end));
+      if (params.end) args.push("-to", normalizeTime(String(params.end)));
       if (params.copy) args.push("-c", "copy");
       else {
         args.push("-c:v", "libx264", "-preset", params.preset || "medium");

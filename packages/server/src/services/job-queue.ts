@@ -1,9 +1,12 @@
 import PQueue from "p-queue";
 import { cpus } from "node:os";
+import { statSync } from "node:fs";
+import { basename } from "node:path";
+import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/index.js";
-import { jobs } from "../db/schema.js";
+import { jobs, files } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import { runFfmpeg, generateThumbnail } from "./ffmpeg.js";
+import { runFfmpeg, generateThumbnail, ffprobe } from "./ffmpeg.js";
 import { buildFfmpegArgs } from "./operations.js";
 import { emitProgress } from "./progress.js";
 
@@ -49,11 +52,45 @@ async function processJob(jobId: string) {
       await runFfmpeg({ jobId, args, outputPath });
     }
 
+    // Register output as a file record
+    const fileId = uuidv4();
+    let duration: number | null = null;
+    let width: number | null = null;
+    let height: number | null = null;
+    let size = 0;
+
+    try {
+      size = statSync(outputPath).size;
+      const probe = await ffprobe(outputPath);
+      duration = parseFloat(probe.format.duration) || null;
+      const videoStream = probe.streams.find((s) => s.codec_type === "video");
+      if (videoStream) {
+        width = videoStream.width ?? null;
+        height = videoStream.height ?? null;
+      }
+    } catch {
+      // non-critical, file still registered
+    }
+
+    db.insert(files)
+      .values({
+        id: fileId,
+        sessionId: job.sessionId,
+        filename: basename(outputPath),
+        path: outputPath,
+        size,
+        mimeType: `video/${params.format || "mp4"}`,
+        duration,
+        width,
+        height,
+      })
+      .run();
+
     db.update(jobs)
       .set({
         status: "completed",
         progress: 100,
-        outputFile: outputPath,
+        outputFile: fileId,
         completedAt: new Date().toISOString(),
       })
       .where(eq(jobs.id, jobId))

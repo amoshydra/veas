@@ -16,6 +16,8 @@ interface Job {
   operation: string;
   status: string;
   progress: number;
+  outputFile: string | null;
+  error: string | null;
 }
 
 interface FileItem {
@@ -192,19 +194,46 @@ export default function Editor() {
             <div className="mt-4">
               <h2 className="font-semibold mb-2">Jobs</h2>
               <div className="space-y-1">
-                {(jobs as Job[]).map((j) => (
-                  <div key={j.id} className="flex items-center justify-between p-2 bg-slate-800 rounded text-sm">
-                    <span className="capitalize">{j.operation}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded ${
-                      j.status === "completed" ? "bg-green-900 text-green-300" :
-                      j.status === "failed" ? "bg-red-900 text-red-300" :
-                      j.status === "processing" ? "bg-blue-900 text-blue-300" :
-                      "bg-slate-700 text-slate-300"
-                    }`}>
-                      {j.status === "processing" ? `${j.progress}%` : j.status}
-                    </span>
-                  </div>
-                ))}
+                {(jobs as Job[]).map((j) => {
+                  const isCompleted = j.status === "completed" && j.outputFile;
+                  const isFailed = j.status === "failed";
+                  return (
+                    <button
+                      key={j.id}
+                      onClick={() => {
+                        if (isCompleted) {
+                          setSelectedFileId(j.outputFile);
+                          setActivePanel(null);
+                          queryClient.invalidateQueries({ queryKey: ["files", sessionId] });
+                        }
+                      }}
+                      disabled={!isCompleted}
+                      className={`w-full flex items-center justify-between p-2 rounded text-sm transition-colors ${
+                        isCompleted
+                          ? "bg-slate-800 hover:bg-slate-700 cursor-pointer"
+                          : "bg-slate-800 cursor-default"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="capitalize">{j.operation}</span>
+                        {isCompleted && (
+                          <span className="text-xs text-green-400">tap to view</span>
+                        )}
+                        {isFailed && j.error && (
+                          <span className="text-xs text-red-400 truncate max-w-[150px]">{j.error}</span>
+                        )}
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        isCompleted ? "bg-green-900 text-green-300" :
+                        isFailed ? "bg-red-900 text-red-300" :
+                        j.status === "processing" ? "bg-blue-900 text-blue-300" :
+                        "bg-slate-700 text-slate-300"
+                      }`}>
+                        {j.status === "processing" ? `${j.progress}%` : j.status}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
