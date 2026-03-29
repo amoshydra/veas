@@ -15,6 +15,7 @@ export interface TimelineState {
   trimEnd: number;
   scrollOffset: number;
   pixelsPerSecond: number;
+  showTrimRegion: boolean;
 }
 
 export type HitRegion =

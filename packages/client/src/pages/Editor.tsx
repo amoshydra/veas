@@ -115,6 +115,21 @@ export default function Editor() {
     };
   }, [selectedFileId]);
 
+  // A-B loop when trim panel is active
+  const isTrimMode = activePanel === "trim";
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isTrimMode) return;
+
+    const loop = () => {
+      if (video.currentTime >= trimEnd) {
+        video.currentTime = trimStart;
+      }
+    };
+    video.addEventListener("timeupdate", loop);
+    return () => video.removeEventListener("timeupdate", loop);
+  }, [isTrimMode, trimStart, trimEnd]);
+
   const handleTimeChange = useCallback((time: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = time;
@@ -176,6 +191,7 @@ export default function Editor() {
           trimEnd={trimEnd}
           pixelsPerSecond={pixelsPerSecond}
           scrollOffset={scrollOffset}
+          showTrimRegion={isTrimMode}
           spriteMeta={spriteMeta}
           spriteImage={spriteImage}
           onTimeChange={handleTimeChange}

@@ -9,6 +9,7 @@ interface Props {
   trimEnd: number;
   pixelsPerSecond: number;
   scrollOffset: number;
+  showTrimRegion: boolean;
   spriteMeta: SpriteMetadata | null;
   spriteImage: HTMLImageElement | null;
   onTimeChange: (time: number) => void;
@@ -24,6 +25,7 @@ export default function Timeline({
   trimEnd,
   pixelsPerSecond,
   scrollOffset,
+  showTrimRegion,
   spriteMeta,
   spriteImage,
   onTimeChange,
@@ -45,6 +47,7 @@ export default function Timeline({
       trimEnd,
       scrollOffset,
       pixelsPerSecond,
+      showTrimRegion,
     };
 
     const engine = new TimelineEngine(canvasRef.current, state, {
@@ -67,8 +70,9 @@ export default function Timeline({
       trimEnd,
       scrollOffset,
       pixelsPerSecond,
+      showTrimRegion,
     });
-  }, [currentTime, duration, trimStart, trimEnd, scrollOffset, pixelsPerSecond]);
+  }, [currentTime, duration, trimStart, trimEnd, scrollOffset, pixelsPerSecond, showTrimRegion]);
 
   // Sync sprite
   useEffect(() => {

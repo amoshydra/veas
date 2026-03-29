@@ -129,27 +129,29 @@ export class TimelineEngine {
     // Thumbnails
     this.drawThumbnails(0, trackY, w, trackH);
 
-    // Trim overlay
-    const trimLeftX = this.timeToX(trimStart);
-    const trimRightX = this.timeToX(trimEnd);
+    // Trim overlay — only when trim panel is active
+    if (state.showTrimRegion) {
+      const trimLeftX = this.timeToX(trimStart);
+      const trimRightX = this.timeToX(trimEnd);
 
-    // Dim outside trim region
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    if (trimLeftX > 0) ctx.fillRect(0, trackY, Math.min(trimLeftX, w), trackH);
-    if (trimRightX < w) ctx.fillRect(Math.max(trimRightX, 0), trackY, w - Math.max(trimRightX, 0), trackH);
+      // Dim outside trim region
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      if (trimLeftX > 0) ctx.fillRect(0, trackY, Math.min(trimLeftX, w), trackH);
+      if (trimRightX < w) ctx.fillRect(Math.max(trimRightX, 0), trackY, w - Math.max(trimRightX, 0), trackH);
 
-    // Trim region highlight
-    ctx.fillStyle = TRIM_OVERLAY;
-    ctx.fillRect(
-      Math.max(trimLeftX, 0),
-      trackY,
-      Math.min(trimRightX, w) - Math.max(trimLeftX, 0),
-      trackH
-    );
+      // Trim region highlight
+      ctx.fillStyle = TRIM_OVERLAY;
+      ctx.fillRect(
+        Math.max(trimLeftX, 0),
+        trackY,
+        Math.min(trimRightX, w) - Math.max(trimLeftX, 0),
+        trackH
+      );
 
-    // Trim handles
-    this.drawHandle(trimLeftX, trackY, trackH, "left");
-    this.drawHandle(trimRightX, trackY, trackH, "right");
+      // Trim handles
+      this.drawHandle(trimLeftX, trackY, trackH, "left");
+      this.drawHandle(trimRightX, trackY, trackH, "right");
+    }
 
     // Ruler
     this.drawRuler();
@@ -299,8 +301,6 @@ export class TimelineEngine {
     const { state, width: w } = this;
     const trackY = RULER_HEIGHT;
     const trackH = TRACK_HEIGHT;
-    const trimLeftX = this.timeToX(state.trimStart);
-    const trimRightX = this.timeToX(state.trimEnd);
     const playheadX = this.timeToX(state.currentTime);
 
     // Playhead (above track)
@@ -308,8 +308,10 @@ export class TimelineEngine {
       return { type: "playhead" };
     }
 
-    // Trim handles
-    if (y >= trackY && y <= trackY + trackH) {
+    // Trim handles — only when trim panel is active
+    if (state.showTrimRegion && y >= trackY && y <= trackY + trackH) {
+      const trimLeftX = this.timeToX(state.trimStart);
+      const trimRightX = this.timeToX(state.trimEnd);
       if (Math.abs(x - trimLeftX) < TRIM_HANDLE_TOUCH) {
         return { type: "trim-left" };
       }
