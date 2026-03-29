@@ -8,6 +8,9 @@ interface Props {
   sessionId: string;
   fileId: string;
   videoRef: RefObject<HTMLVideoElement | null>;
+  trimStart?: number;
+  trimEnd?: number;
+  onTrimChange?: (start: number, end: number) => void;
 }
 
 function formatTime(secs: number): string {
@@ -22,12 +25,34 @@ function formatTime(secs: number): string {
   return `${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
 }
 
+function parseTime(time: string): number {
+  if (/^\d+(\.\d+)?$/.test(time)) return parseFloat(time);
+  if (/^\d{1,2}:\d{1,2}(\.\d+)?$/.test(time)) {
+    const [m, s] = time.split(":");
+    return parseInt(m) * 60 + parseFloat(s);
+  }
+  const match = time.match(/^(\d{1,2}):(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/);
+  if (match) {
+    return parseInt(match[1]) * 3600 + parseInt(match[2]) * 60 + parseFloat(match[3]);
+  }
+  return 0;
+}
+
 const FRAME_STEP = 1 / 30; // ~30fps default
 
-export default function TrimPanel({ sessionId, fileId, videoRef }: Props) {
-  const [start, setStart] = useState("00:00.000");
-  const [end, setEnd] = useState("00:10.000");
+export default function TrimPanel({ sessionId, fileId, videoRef, trimStart, trimEnd, onTrimChange }: Props) {
+  const [start, setStart] = useState(trimStart != null ? formatTime(trimStart) : "00:00.000");
+  const [end, setEnd] = useState(trimEnd != null ? formatTime(trimEnd) : "00:10.000");
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+
+  // Sync from parent (timeline drag)
+  useEffect(() => {
+    if (trimStart != null) setStart(formatTime(trimStart));
+  }, [trimStart]);
+
+  useEffect(() => {
+    if (trimEnd != null) setEnd(formatTime(trimEnd));
+  }, [trimEnd]);
   const [currentTime, setCurrentTime] = useState("00:00.000");
 
   const { progress, status } = useSSE(activeJobId);
@@ -50,13 +75,19 @@ export default function TrimPanel({ sessionId, fileId, videoRef }: Props) {
 
   const useCurrentAsStart = useCallback(() => {
     const video = videoRef.current;
-    if (video) setStart(formatTime(video.currentTime));
-  }, [videoRef]);
+    if (video) {
+      setStart(formatTime(video.currentTime));
+      onTrimChange?.(video.currentTime, parseTime(end));
+    }
+  }, [videoRef, end, onTrimChange]);
 
   const useCurrentAsEnd = useCallback(() => {
     const video = videoRef.current;
-    if (video) setEnd(formatTime(video.currentTime));
-  }, [videoRef]);
+    if (video) {
+      setEnd(formatTime(video.currentTime));
+      onTrimChange?.(parseTime(start), video.currentTime);
+    }
+  }, [videoRef, start, onTrimChange]);
 
   const stepFrame = useCallback((direction: 1 | -1) => {
     const video = videoRef.current;

@@ -1,12 +1,21 @@
 import { useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { api } from "../api/client.js";
 import OperationToolbar from "../components/OperationToolbar.js";
+import Timeline from "../components/Timeline/Timeline.js";
+import type { SpriteMetadata } from "../components/Timeline/types.js";
 import TrimPanel from "../components/panels/TrimPanel.js";
 import TranscodePanel from "../components/panels/TranscodePanel.js";
 
-const PANEL_MAP: Record<string, React.ComponentType<{ sessionId: string; fileId: string; videoRef: React.RefObject<HTMLVideoElement | null> }>> = {
+const PANEL_MAP: Record<string, React.ComponentType<{
+  sessionId: string;
+  fileId: string;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  trimStart?: number;
+  trimEnd?: number;
+  onTrimChange?: (start: number, end: number) => void;
+}>> = {
   trim: TrimPanel,
   transcode: TranscodePanel,
 };
@@ -37,6 +46,15 @@ export default function Editor() {
   const [deleteConfirm, setDeleteConfirm] = useState<FileItem | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Timeline state
+  const [currentTime, setCurrentTime] = useState(0);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(10);
+  const [pixelsPerSecond, setPixelsPerSecond] = useState(50);
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [spriteMeta, setSpriteMeta] = useState<SpriteMetadata | null>(null);
+  const [spriteImage, setSpriteImage] = useState<HTMLImageElement | null>(null);
+
   const { data: filesData, isLoading: filesLoading } = useQuery({
     queryKey: ["files", sessionId],
     queryFn: () => api.listFiles(sessionId!),
@@ -52,6 +70,9 @@ export default function Editor() {
     refetchInterval: 2000,
   });
 
+  const selectedFile = files.find((f) => f.id === selectedFileId);
+  const hasFiles = files.length > 0;
+
   // Auto-select first file
   useEffect(() => {
     if (files.length > 0 && !selectedFileId) {
@@ -59,8 +80,52 @@ export default function Editor() {
     }
   }, [files, selectedFileId]);
 
-  const selectedFile = files.find((f) => f.id === selectedFileId);
-  const hasFiles = files.length > 0;
+  // Load sprite when file is selected
+  useEffect(() => {
+    if (!selectedFileId) return;
+    setSpriteMeta(null);
+    setSpriteImage(null);
+
+    api.getFileSprite(selectedFileId).then((meta) => {
+      if (meta.error) return;
+      setSpriteMeta(meta);
+      const img = new Image();
+      img.src = meta.spriteUrl;
+      img.onload = () => setSpriteImage(img);
+    });
+  }, [selectedFileId]);
+
+  // Set trim end from file duration
+  useEffect(() => {
+    if (selectedFile?.duration) {
+      setTrimEnd(selectedFile.duration);
+    }
+  }, [selectedFile?.id]);
+
+  // Video time sync
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const update = () => setCurrentTime(video.currentTime);
+    video.addEventListener("timeupdate", update);
+    video.addEventListener("seeked", update);
+    return () => {
+      video.removeEventListener("timeupdate", update);
+      video.removeEventListener("seeked", update);
+    };
+  }, [selectedFileId]);
+
+  const handleTimeChange = useCallback((time: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+    }
+    setCurrentTime(time);
+  }, []);
+
+  const handleTrimChange = useCallback((start: number, end: number) => {
+    setTrimStart(start);
+    setTrimEnd(end);
+  }, []);
 
   const PanelComponent = activePanel ? PANEL_MAP[activePanel] : null;
 
@@ -102,6 +167,24 @@ export default function Editor() {
         )}
       </div>
 
+      {/* Timeline */}
+      {hasFiles && selectedFile && (
+        <Timeline
+          currentTime={currentTime}
+          duration={selectedFile.duration || 30}
+          trimStart={trimStart}
+          trimEnd={trimEnd}
+          pixelsPerSecond={pixelsPerSecond}
+          scrollOffset={scrollOffset}
+          spriteMeta={spriteMeta}
+          spriteImage={spriteImage}
+          onTimeChange={handleTimeChange}
+          onTrimChange={handleTrimChange}
+          onZoomChange={setPixelsPerSecond}
+          onScrollChange={setScrollOffset}
+        />
+      )}
+
       {/* Operation Toolbar — only when files exist */}
       {hasFiles && (
         <OperationToolbar
@@ -122,7 +205,7 @@ export default function Editor() {
               Close
             </button>
           </div>
-          <PanelComponent sessionId={sessionId} fileId={selectedFileId} videoRef={videoRef} />
+          <PanelComponent sessionId={sessionId} fileId={selectedFileId} videoRef={videoRef} trimStart={trimStart} trimEnd={trimEnd} onTrimChange={handleTrimChange} />
         </div>
       )}
 

@@ -132,6 +132,69 @@ filesRoute.get("/:id/thumbnail", async (c) => {
   });
 });
 
+filesRoute.get("/:id/sprite", async (c) => {
+  const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
+  if (!file) return c.json({ error: "File not found" }, 404);
+
+  const spritePath = file.path.replace(extname(file.path), "_sprite.jpg");
+  const metaPath = file.path.replace(extname(file.path), "_sprite.json");
+
+  // Return cached sprite metadata if it exists
+  if (existsSync(spritePath) && existsSync(metaPath)) {
+    const meta = JSON.parse(
+      await import("node:fs").then((fs) => fs.readFileSync(metaPath, "utf-8"))
+    );
+    return c.json({ ...meta, spriteUrl: `/api/files/${file.id}/sprite.jpg` });
+  }
+
+  const duration = file.duration || 30;
+
+  try {
+    const { generateSpriteSheet } = await import("../services/ffmpeg.js");
+    const result = await generateSpriteSheet(file.path, spritePath, duration);
+
+    // Read sprite to get actual dimensions
+    const spriteStat = statSync(spritePath);
+    const actualHeight = Math.round(result.frameHeight * result.rows);
+
+    const meta = {
+      frameWidth: result.frameWidth,
+      frameHeight: Math.round(spriteStat.size > 0 ? result.frameHeight : result.frameHeight),
+      columns: result.columns,
+      rows: result.rows,
+      interval: result.interval,
+      totalFrames: result.totalFrames,
+      spriteSize: spriteStat.size,
+    };
+
+    // Save metadata
+    const { writeFileSync } = await import("node:fs");
+    writeFileSync(metaPath, JSON.stringify(meta));
+
+    return c.json({ ...meta, spriteUrl: `/api/files/${file.id}/sprite.jpg` });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
+  }
+});
+
+// Serve sprite image (must be before /:id to avoid conflict)
+filesRoute.get("/:id/sprite.jpg", (c) => {
+  const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
+  if (!file) return c.json({ error: "File not found" }, 404);
+
+  const spritePath = file.path.replace(extname(file.path), "_sprite.jpg");
+  if (!existsSync(spritePath)) return c.json({ error: "Sprite not found" }, 404);
+
+  const stat = statSync(spritePath);
+  return new Response(createReadStream(spritePath) as any, {
+    headers: {
+      "Content-Type": "image/jpeg",
+      "Content-Length": String(stat.size),
+      "Cache-Control": "public, max-age=86400",
+    },
+  });
+});
+
 filesRoute.delete("/:id", (c) => {
   const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
   if (!file) return c.json({ error: "File not found" }, 404);

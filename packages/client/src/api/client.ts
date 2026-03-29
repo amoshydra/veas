@@ -70,6 +70,9 @@ export const api = {
       headers,
     }).then((r) => r.json()),
 
+  getFileSprite: (fileId: string) =>
+    fetch(`${API_BASE}/files/${fileId}/sprite`, { headers }).then((r) => r.json()),
+
   // Jobs
   listJobs: (sessionId: string) =>
     fetch(`${API_BASE}/jobs?sessionId=${sessionId}`, { headers }).then((r) =>
