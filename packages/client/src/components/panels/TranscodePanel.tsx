@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { RefObject } from "react";
 import { api } from "../../api/client.js";
 import ProgressIndicator from "../../components/ui/ProgressIndicator.js";
 import { useSSE } from "../../hooks/useSSE.js";
@@ -6,6 +7,7 @@ import { useSSE } from "../../hooks/useSSE.js";
 interface Props {
   sessionId: string;
   fileId: string;
+  videoRef: RefObject<HTMLVideoElement | null>;
 }
 
 const CODECS = [

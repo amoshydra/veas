@@ -6,7 +6,7 @@ import OperationToolbar from "../components/OperationToolbar.js";
 import TrimPanel from "../components/panels/TrimPanel.js";
 import TranscodePanel from "../components/panels/TranscodePanel.js";
 
-const PANEL_MAP: Record<string, React.ComponentType<{ sessionId: string; fileId: string }>> = {
+const PANEL_MAP: Record<string, React.ComponentType<{ sessionId: string; fileId: string; videoRef: React.RefObject<HTMLVideoElement | null> }>> = {
   trim: TrimPanel,
   transcode: TranscodePanel,
 };
@@ -121,7 +121,7 @@ export default function Editor() {
               Close
             </button>
           </div>
-          <PanelComponent sessionId={sessionId} fileId={selectedFileId} />
+          <PanelComponent sessionId={sessionId} fileId={selectedFileId} videoRef={videoRef} />
         </div>
       )}
 
