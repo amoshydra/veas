@@ -1,0 +1,22 @@
+{
+  "name": "veas",
+  "private": true,
+  "scripts": {
+    "dev:server": "pnpm --filter @veas/server dev",
+    "dev:client": "pnpm --filter @veas/client dev",
+    "dev": "concurrently \"pnpm dev:server\" \"pnpm dev:client\"",
+    "build": "pnpm -r build",
+    "db:generate": "pnpm --filter @veas/server db:generate",
+    "db:migrate": "pnpm --filter @veas/server db:migrate"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.7.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  }
+}
