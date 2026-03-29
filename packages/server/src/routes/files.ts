@@ -13,6 +13,13 @@ const filesRoute = new Hono();
 const UPLOAD_DIR = "./data/uploads";
 mkdirSync(UPLOAD_DIR, { recursive: true });
 
+filesRoute.get("/", (c) => {
+  const sessionId = c.req.query("sessionId");
+  let result = db.select().from(files).all();
+  if (sessionId) result = result.filter((f) => f.sessionId === sessionId);
+  return c.json(result);
+});
+
 filesRoute.post("/upload", async (c) => {
   const body = await c.req.parseBody();
   const file = body["file"] as File;

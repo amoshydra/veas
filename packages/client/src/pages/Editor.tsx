@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client.js";
 import OperationToolbar from "../components/OperationToolbar.js";
@@ -18,15 +18,27 @@ interface Job {
   progress: number;
 }
 
+interface FileItem {
+  id: string;
+  filename: string;
+  duration: number | null;
+  width: number | null;
+  height: number | null;
+  size: number;
+}
+
 export default function Editor() {
   const { sessionId } = useParams<{ sessionId: string }>();
+  const queryClient = useQueryClient();
   const [activePanel, setActivePanel] = useState<string | null>(null);
 
-  const { data: files, isLoading: filesLoading } = useQuery({
+  const { data: filesData, isLoading: filesLoading } = useQuery({
     queryKey: ["files", sessionId],
     queryFn: () => api.listFiles(sessionId!),
     enabled: !!sessionId,
   });
+
+  const files = (filesData || []) as FileItem[];
 
   const { data: jobs } = useQuery({
     queryKey: ["jobs", sessionId],
@@ -92,6 +104,7 @@ export default function Editor() {
                     const file = e.target.files?.[0];
                     if (file && sessionId) {
                       await api.uploadFile(sessionId, file);
+                      queryClient.invalidateQueries({ queryKey: ["files", sessionId] });
                     }
                   }}
                 />
@@ -119,6 +132,7 @@ export default function Editor() {
                     const file = e.target.files?.[0];
                     if (file && sessionId) {
                       await api.uploadFile(sessionId, file);
+                      queryClient.invalidateQueries({ queryKey: ["files", sessionId] });
                     }
                   }}
                 />

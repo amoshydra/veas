@@ -54,13 +54,9 @@ export const api = {
   },
 
   listFiles: (sessionId: string) =>
-    fetch(`${API_BASE}/jobs?sessionId=${sessionId}`, { headers })
-      .then((r) => r.json())
-      .then((jobs: any[]) => {
-        // Return files from jobs — files API needs a session filter
-        // For now, we return an empty array and rely on upload responses
-        return [] as any[];
-      }),
+    fetch(`${API_BASE}/files?sessionId=${sessionId}`, { headers }).then((r) =>
+      r.json()
+    ),
 
   getFileProbe: (fileId: string) =>
     fetch(`${API_BASE}/files/${fileId}/probe`, { headers }).then((r) => r.json()),

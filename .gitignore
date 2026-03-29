@@ -4,7 +4,5 @@ dist
 *.db-wal
 *.db-shm
 *.tsbuildinfo
-data/uploads
-data/output
-data/tmp
+data/
 .env
