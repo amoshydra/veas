@@ -5,17 +5,23 @@ function normalizeTime(time: string): string {
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
+    if (h > 0) {
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
+    }
+    return `${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
   }
 
-  // Handle "M:SS" or "MM:SS" format: "0:10" or "1:30"
+  // Handle "MM:SS.mmm" format: "00:10.123" or "1:30.5"
   if (/^\d{1,2}:\d{1,2}(\.\d+)?$/.test(time)) {
     const parts = time.split(":");
-    const m = parseInt(parts[0]);
+    const totalMins = parseInt(parts[0]);
     const s = parseFloat(parts[1]);
-    const h = Math.floor(m / 60);
-    const mRem = m % 60;
-    return `${String(h).padStart(2, "0")}:${String(mRem).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    if (h > 0) {
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
+    }
+    return `${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
   }
 
   // Handle "H:MM:SS" format: "0:00:10" or "1:23:45"
@@ -24,10 +30,12 @@ function normalizeTime(time: string): string {
     const h = parseInt(match[1]);
     const m = parseInt(match[2]);
     const s = parseFloat(match[3]);
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
+    if (h > 0) {
+      return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
+    }
+    return `${String(m).padStart(2, "0")}:${s.toFixed(3).padStart(6, "0")}`;
   }
 
-  // Already in "HH:MM:SS.mmm" format or unrecognized — return as-is
   return time;
 }
 

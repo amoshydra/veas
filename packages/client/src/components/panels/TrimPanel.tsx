@@ -9,8 +9,8 @@ interface Props {
 }
 
 export default function TrimPanel({ sessionId, fileId }: Props) {
-  const [start, setStart] = useState("00:00:00");
-  const [end, setEnd] = useState("00:00:10");
+  const [start, setStart] = useState("00:00.000");
+  const [end, setEnd] = useState("00:10.000");
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const { progress, status } = useSSE(activeJobId);
@@ -33,7 +33,7 @@ export default function TrimPanel({ sessionId, fileId }: Props) {
             type="text"
             value={start}
             onChange={(e) => setStart(e.target.value)}
-            placeholder="00:00:00"
+            placeholder="00:00.000"
             className="w-full p-2 bg-slate-700 rounded text-sm border border-slate-600 focus:border-blue-500 outline-none"
           />
         </div>
@@ -43,11 +43,13 @@ export default function TrimPanel({ sessionId, fileId }: Props) {
             type="text"
             value={end}
             onChange={(e) => setEnd(e.target.value)}
-            placeholder="00:00:10"
+            placeholder="00:10.000"
             className="w-full p-2 bg-slate-700 rounded text-sm border border-slate-600 focus:border-blue-500 outline-none"
           />
         </div>
       </div>
+
+      <p className="text-xs text-slate-500">Format: MM:SS.mmm or HH:MM:SS.mmm</p>
 
       <ProgressIndicator percent={progress} status={status} />
 
