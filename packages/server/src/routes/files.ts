@@ -83,14 +83,55 @@ filesRoute.get("/:id", (c) => {
 
   if (!existsSync(file.path)) return c.json({ error: "File not found on disk" }, 404);
 
-  const stat = statSync(file.path);
+  const fileSize = statSync(file.path).size;
   const contentType = file.mimeType || "application/octet-stream";
+  const range = c.req.header("range");
 
-  return new Response(createReadStream(file.path) as any, {
+  // No range request — serve full file with range support advertised
+  if (!range) {
+    return new Response(createReadStream(file.path) as any, {
+      headers: {
+        "Content-Type": contentType,
+        "Content-Length": String(fileSize),
+        "Accept-Ranges": "bytes",
+        "Content-Disposition": `inline; filename="${file.filename}"`,
+      },
+    });
+  }
+
+  // Parse range: "bytes=start-end"
+  const match = range.match(/bytes=(\d+)-(\d*)/);
+  if (!match) {
+    return new Response(null, {
+      status: 416,
+      headers: {
+        "Content-Range": `bytes */${fileSize}`,
+      },
+    });
+  }
+
+  const start = parseInt(match[1], 10);
+  const end = match[2] ? parseInt(match[2], 10) : fileSize - 1;
+
+  if (start >= fileSize || end >= fileSize || start > end) {
+    return new Response(null, {
+      status: 416,
+      headers: {
+        "Content-Range": `bytes */${fileSize}`,
+      },
+    });
+  }
+
+  const chunkSize = end - start + 1;
+
+  return new Response(createReadStream(file.path, { start, end }) as any, {
+    status: 206,
     headers: {
+      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+      "Accept-Ranges": "bytes",
+      "Content-Length": String(chunkSize),
       "Content-Type": contentType,
-      "Content-Length": String(stat.size),
-      "Content-Disposition": `attachment; filename="${file.filename}"`,
+      "Content-Disposition": `inline; filename="${file.filename}"`,
     },
   });
 });
