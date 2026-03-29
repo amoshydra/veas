@@ -1,12 +1,12 @@
 import { useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { api } from "../api/client.js";
 import OperationToolbar from "../components/OperationToolbar.js";
 import TrimPanel from "../components/panels/TrimPanel.js";
 import TranscodePanel from "../components/panels/TranscodePanel.js";
 
-const PANEL_MAP: Record<string, React.ComponentType<{ sessionId: string }>> = {
+const PANEL_MAP: Record<string, React.ComponentType<{ sessionId: string; fileId: string }>> = {
   trim: TrimPanel,
   transcode: TranscodePanel,
 };
@@ -31,6 +31,8 @@ export default function Editor() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const queryClient = useQueryClient();
   const [activePanel, setActivePanel] = useState<string | null>(null);
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const { data: filesData, isLoading: filesLoading } = useQuery({
     queryKey: ["files", sessionId],
@@ -47,6 +49,16 @@ export default function Editor() {
     refetchInterval: 2000,
   });
 
+  // Auto-select first file
+  useEffect(() => {
+    if (files.length > 0 && !selectedFileId) {
+      setSelectedFileId(files[0].id);
+    }
+  }, [files, selectedFileId]);
+
+  const selectedFile = files.find((f) => f.id === selectedFileId);
+  const hasFiles = files.length > 0;
+
   const PanelComponent = activePanel ? PANEL_MAP[activePanel] : null;
 
   return (
@@ -57,22 +69,46 @@ export default function Editor() {
         <span className="text-xs text-slate-500">{sessionId?.slice(0, 8)}</span>
       </header>
 
-      {/* Video Preview Placeholder */}
-      <div className="flex-1 flex items-center justify-center bg-black min-h-[200px]">
-        <div className="text-slate-500 text-center">
-          <div className="text-4xl mb-2">🎬</div>
-          <div className="text-sm">Upload a video to begin</div>
-        </div>
+      {/* Video Preview */}
+      <div className="flex-1 flex items-center justify-center bg-black min-h-[200px] relative">
+        {hasFiles && selectedFile ? (
+          <>
+            <video
+              ref={videoRef}
+              src={`/api/files/${selectedFile.id}`}
+              className="max-w-full max-h-full"
+              controls
+              playsInline
+            />
+            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-xs text-slate-300 bg-black/60 px-2 py-1 rounded">
+              <span className="truncate">{selectedFile.filename}</span>
+              <span className="shrink-0 ml-2">
+                {selectedFile.duration ? `${selectedFile.duration.toFixed(1)}s` : ""}
+                {" "}
+                {selectedFile.width && selectedFile.height
+                  ? `${selectedFile.width}×${selectedFile.height}`
+                  : ""}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div className="text-slate-500 text-center">
+            <div className="text-4xl mb-2">🎬</div>
+            <div className="text-sm">Upload a video to begin</div>
+          </div>
+        )}
       </div>
 
-      {/* Operation Toolbar */}
-      <OperationToolbar
-        active={activePanel}
-        onSelect={setActivePanel}
-      />
+      {/* Operation Toolbar — only when files exist */}
+      {hasFiles && (
+        <OperationToolbar
+          active={activePanel}
+          onSelect={setActivePanel}
+        />
+      )}
 
       {/* Active Operation Panel */}
-      {PanelComponent && sessionId && (
+      {PanelComponent && sessionId && selectedFileId && (
         <div className="border-t border-slate-700 p-4 max-h-[40vh] overflow-y-auto bg-slate-800">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold capitalize">{activePanel}</h2>
@@ -83,7 +119,7 @@ export default function Editor() {
               Close
             </button>
           </div>
-          <PanelComponent sessionId={sessionId} />
+          <PanelComponent sessionId={sessionId} fileId={selectedFileId} />
         </div>
       )}
 
@@ -93,7 +129,7 @@ export default function Editor() {
           <h2 className="font-semibold mb-2">Files</h2>
           {filesLoading ? (
             <p className="text-slate-400 text-sm">Loading...</p>
-          ) : files?.length === 0 ? (
+          ) : !hasFiles ? (
             <div>
               <label className="block w-full py-3 px-4 border-2 border-dashed border-slate-600 rounded-lg text-center text-slate-400 cursor-pointer hover:border-slate-500 transition-colors">
                 <input
@@ -103,8 +139,9 @@ export default function Editor() {
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file && sessionId) {
-                      await api.uploadFile(sessionId, file);
+                      const uploaded = await api.uploadFile(sessionId, file);
                       queryClient.invalidateQueries({ queryKey: ["files", sessionId] });
+                      setSelectedFileId(uploaded.id);
                     }
                   }}
                 />
@@ -113,15 +150,23 @@ export default function Editor() {
             </div>
           ) : (
             <div className="space-y-2">
-              {files?.map((f) => (
-                <div key={f.id} className="p-2 bg-slate-800 rounded text-sm">
+              {files.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setSelectedFileId(f.id)}
+                  className={`w-full text-left p-2 rounded text-sm transition-colors ${
+                    f.id === selectedFileId
+                      ? "bg-blue-900 border border-blue-600"
+                      : "bg-slate-800 border border-transparent hover:bg-slate-700"
+                  }`}
+                >
                   <div className="font-medium truncate">{f.filename}</div>
                   <div className="text-xs text-slate-400">
                     {f.duration ? `${f.duration.toFixed(1)}s` : ""}{" "}
                     {f.width && f.height ? `${f.width}×${f.height}` : ""}
                     {" "}{(f.size / 1024 / 1024).toFixed(1)}MB
                   </div>
-                </div>
+                </button>
               ))}
               <label className="block w-full py-2 px-4 border border-dashed border-slate-600 rounded text-center text-slate-400 text-sm cursor-pointer hover:border-slate-500">
                 <input
@@ -131,8 +176,9 @@ export default function Editor() {
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (file && sessionId) {
-                      await api.uploadFile(sessionId, file);
+                      const uploaded = await api.uploadFile(sessionId, file);
                       queryClient.invalidateQueries({ queryKey: ["files", sessionId] });
+                      setSelectedFileId(uploaded.id);
                     }
                   }}
                 />

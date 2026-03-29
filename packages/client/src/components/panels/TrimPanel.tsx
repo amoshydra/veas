@@ -5,12 +5,12 @@ import { useSSE } from "../../hooks/useSSE.js";
 
 interface Props {
   sessionId: string;
+  fileId: string;
 }
 
-export default function TrimPanel({ sessionId }: Props) {
+export default function TrimPanel({ sessionId, fileId }: Props) {
   const [start, setStart] = useState("00:00:00");
   const [end, setEnd] = useState("00:00:10");
-  const [inputFileId, setInputFileId] = useState("");
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const { progress, status } = useSSE(activeJobId);
@@ -18,7 +18,7 @@ export default function TrimPanel({ sessionId }: Props) {
   const handleTrim = async () => {
     const result = await api.runOperation("trim", {
       sessionId,
-      inputFiles: [inputFileId],
+      inputFiles: [fileId],
       params: { start, end, copy: true, format: "mp4" },
     });
     setActiveJobId(result.id);
@@ -26,17 +26,6 @@ export default function TrimPanel({ sessionId }: Props) {
 
   return (
     <div className="space-y-3">
-      <div>
-        <label className="block text-xs text-slate-400 mb-1">Input File ID</label>
-        <input
-          type="text"
-          value={inputFileId}
-          onChange={(e) => setInputFileId(e.target.value)}
-          placeholder="Paste file ID"
-          className="w-full p-2 bg-slate-700 rounded text-sm border border-slate-600 focus:border-blue-500 outline-none"
-        />
-      </div>
-
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs text-slate-400 mb-1">Start</label>
@@ -64,7 +53,7 @@ export default function TrimPanel({ sessionId }: Props) {
 
       <button
         onClick={handleTrim}
-        disabled={!inputFileId || status === "processing" || status === "connecting"}
+        disabled={status === "processing" || status === "connecting"}
         className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 rounded font-medium text-sm transition-colors"
       >
         {status === "processing" ? `Trimming... ${Math.round(progress)}%` : "Trim Video"}

@@ -5,6 +5,7 @@ import { useSSE } from "../../hooks/useSSE.js";
 
 interface Props {
   sessionId: string;
+  fileId: string;
 }
 
 const CODECS = [
@@ -15,8 +16,7 @@ const CODECS = [
 
 const PRESETS = ["ultrafast", "fast", "medium", "slow", "veryslow"];
 
-export default function TranscodePanel({ sessionId }: Props) {
-  const [inputFileId, setInputFileId] = useState("");
+export default function TranscodePanel({ sessionId, fileId }: Props) {
   const [codec, setCodec] = useState("libx264");
   const [crf, setCrf] = useState(23);
   const [preset, setPreset] = useState("medium");
@@ -28,7 +28,7 @@ export default function TranscodePanel({ sessionId }: Props) {
   const handleTranscode = async () => {
     const result = await api.runOperation("transcode", {
       sessionId,
-      inputFiles: [inputFileId],
+      inputFiles: [fileId],
       params: { codec, crf, preset, format },
     });
     setActiveJobId(result.id);
@@ -36,17 +36,6 @@ export default function TranscodePanel({ sessionId }: Props) {
 
   return (
     <div className="space-y-3">
-      <div>
-        <label className="block text-xs text-slate-400 mb-1">Input File ID</label>
-        <input
-          type="text"
-          value={inputFileId}
-          onChange={(e) => setInputFileId(e.target.value)}
-          placeholder="Paste file ID"
-          className="w-full p-2 bg-slate-700 rounded text-sm border border-slate-600 focus:border-blue-500 outline-none"
-        />
-      </div>
-
       <div>
         <label className="block text-xs text-slate-400 mb-1">Codec</label>
         <select
@@ -96,7 +85,7 @@ export default function TranscodePanel({ sessionId }: Props) {
 
       <button
         onClick={handleTranscode}
-        disabled={!inputFileId || status === "processing" || status === "connecting"}
+        disabled={status === "processing" || status === "connecting"}
         className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 rounded font-medium text-sm transition-colors"
       >
         {status === "processing" ? `Converting... ${Math.round(progress)}%` : "Transcode"}
