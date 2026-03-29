@@ -42,6 +42,9 @@ export const api = {
       headers,
     }).then((r) => r.json()),
 
+  getSessionSummary: (id: string) =>
+    fetch(`${API_BASE}/sessions/${id}/summary`, { headers }).then((r) => r.json()),
+
   // Files
   uploadFile: (sessionId: string, file: File) => {
     const formData = new FormData();

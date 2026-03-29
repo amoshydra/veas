@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
@@ -8,9 +9,17 @@ interface Session {
   updatedAt: string;
 }
 
+interface DeleteConfirm {
+  id: string;
+  name: string;
+  fileCount: number;
+  totalSize: number;
+}
+
 export default function Sessions() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [confirmDelete, setConfirmDelete] = useState<DeleteConfirm | null>(null);
 
   const { data: sessionsData, isLoading } = useQuery({
     queryKey: ["sessions"],
@@ -31,8 +40,18 @@ export default function Sessions() {
     mutationFn: api.deleteSession,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      setConfirmDelete(null);
     },
   });
+
+  const handleDelete = async (s: Session) => {
+    const summary = await api.getSessionSummary(s.id);
+    if (summary.fileCount > 0) {
+      setConfirmDelete({ id: s.id, name: s.name, ...summary });
+    } else {
+      deleteMutation.mutate(s.id);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -71,7 +90,7 @@ export default function Sessions() {
                   </div>
                 </button>
                 <button
-                  onClick={() => deleteMutation.mutate(s.id)}
+                  onClick={() => handleDelete(s)}
                   className="ml-2 px-2 py-1 text-red-400 hover:text-red-300 text-sm"
                 >
                   Delete
@@ -81,6 +100,42 @@ export default function Sessions() {
           </div>
         )}
       </main>
+
+      {/* Delete confirmation modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setConfirmDelete(null)}
+          />
+          <div className="relative bg-slate-800 rounded-xl p-5 w-full max-w-sm space-y-4">
+            <h2 className="text-lg font-semibold">Delete Project</h2>
+            <p className="text-sm text-slate-300">
+              <strong>"{confirmDelete.name}"</strong> has{" "}
+              {confirmDelete.fileCount} file{confirmDelete.fileCount !== 1 ? "s" : ""}{" "}
+              ({(confirmDelete.totalSize / 1024 / 1024).toFixed(1)} MB).
+            </p>
+            <p className="text-sm text-slate-400">
+              This will permanently delete all videos, outputs, and project data.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded font-medium text-sm transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate(confirmDelete.id)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:bg-red-800 rounded font-medium text-sm transition-colors"
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
