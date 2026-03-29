@@ -19,7 +19,7 @@ export default function TrimPanel({ sessionId, fileId }: Props) {
     const result = await api.runOperation("trim", {
       sessionId,
       inputFiles: [fileId],
-      params: { start, end, copy: true, format: "mp4" },
+      params: { start, end, format: "mp4" },
     });
     setActiveJobId(result.id);
   };

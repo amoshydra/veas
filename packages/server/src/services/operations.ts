@@ -31,6 +31,25 @@ function normalizeTime(time: string): string {
   return time;
 }
 
+function timeToSeconds(time: string): number {
+  // Plain seconds
+  if (/^\d+(\.\d+)?$/.test(time)) return parseFloat(time);
+
+  // M:SS
+  if (/^\d{1,2}:\d{1,2}(\.\d+)?$/.test(time)) {
+    const [m, s] = time.split(":");
+    return parseInt(m) * 60 + parseFloat(s);
+  }
+
+  // H:MM:SS
+  const match = time.match(/^(\d{1,2}):(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/);
+  if (match) {
+    return parseInt(match[1]) * 3600 + parseInt(match[2]) * 60 + parseFloat(match[3]);
+  }
+
+  return 0;
+}
+
 export function buildFfmpegArgs(
   operation: string,
   inputFiles: string[],
@@ -43,12 +62,14 @@ export function buildFfmpegArgs(
       const args: string[] = [];
       if (params.start) args.push("-ss", normalizeTime(String(params.start)));
       args.push("-i", inputFiles[0]);
-      if (params.end) args.push("-to", normalizeTime(String(params.end)));
-      if (params.copy) args.push("-c", "copy");
-      else {
-        args.push("-c:v", "libx264", "-preset", params.preset || "medium");
-        args.push("-c:a", "aac");
+      if (params.end && params.start) {
+        const duration = timeToSeconds(String(params.end)) - timeToSeconds(String(params.start));
+        if (duration > 0) args.push("-t", String(duration));
+      } else if (params.end) {
+        args.push("-to", normalizeTime(String(params.end)));
       }
+      args.push("-c:v", "libx264", "-preset", params.preset || "medium");
+      args.push("-c:a", "aac");
       return args;
     }
 
