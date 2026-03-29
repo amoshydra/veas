@@ -3,13 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client.js";
 import OperationToolbar from "../components/OperationToolbar.js";
-import TrimPanel from "../panels/TrimPanel.js";
-import TranscodePanel from "../panels/TranscodePanel.js";
+import TrimPanel from "../components/panels/TrimPanel.js";
+import TranscodePanel from "../components/panels/TranscodePanel.js";
 
 const PANEL_MAP: Record<string, React.ComponentType<{ sessionId: string }>> = {
   trim: TrimPanel,
   transcode: TranscodePanel,
 };
+
+interface Job {
+  id: string;
+  operation: string;
+  status: string;
+  progress: number;
+}
 
 export default function Editor() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -125,7 +132,7 @@ export default function Editor() {
             <div className="mt-4">
               <h2 className="font-semibold mb-2">Jobs</h2>
               <div className="space-y-1">
-                {jobs.map((j) => (
+                {(jobs as Job[]).map((j) => (
                   <div key={j.id} className="flex items-center justify-between p-2 bg-slate-800 rounded text-sm">
                     <span className="capitalize">{j.operation}</span>
                     <span className={`text-xs px-2 py-0.5 rounded ${

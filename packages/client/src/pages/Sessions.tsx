@@ -2,14 +2,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 
+interface Session {
+  id: string;
+  name: string;
+  updatedAt: string;
+}
+
 export default function Sessions() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: sessions, isLoading } = useQuery({
+  const { data: sessionsData, isLoading } = useQuery({
     queryKey: ["sessions"],
     queryFn: api.listSessions,
   });
+
+  const sessions = (sessionsData || []) as Session[];
 
   const createMutation = useMutation({
     mutationFn: api.createSession,
