@@ -332,6 +332,17 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
 
   const onConnect = useCallback(
     (params: Connection) => {
+      const target = params.target!;
+      const targetHandle = params.targetHandle!;
+
+      // Remove existing edges going to the same target handle (one-to-one relationship)
+      const edgesToRemove = storeEdges.filter(
+        (e) => e.target === target && e.targetHandle === targetHandle
+      );
+      for (const edge of edgesToRemove) {
+        store.removeEdge(edge.id);
+      }
+
       const newEdge: GraphEdge = {
         id: `${params.source}-${params.target}-${params.sourceHandle}-${params.targetHandle}`,
         source: params.source!,
@@ -341,12 +352,17 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
         type: 'video',
       };
       store.addEdge(newEdge);
-      setEdges((eds) => addEdge(
-        { ...params, animated: true, style: { stroke: '#60a5fa', strokeWidth: 2 } },
-        eds
-      ));
+      setEdges((eds) => {
+        let updated = eds.filter(
+          (e) => !(e.target === target && e.targetHandle === targetHandle)
+        );
+        return addEdge(
+          { ...params, animated: true, style: { stroke: '#60a5fa', strokeWidth: 2 } },
+          updated
+        );
+      });
     },
-    [store, setEdges]
+    [store, storeEdges, setEdges]
   );
 
   const onNodeClick = useCallback(
