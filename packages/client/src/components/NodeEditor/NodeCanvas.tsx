@@ -1,11 +1,13 @@
 import {
   ReactFlow,
+  ReactFlowProvider,
   Background,
   Controls,
   MiniMap,
   addEdge,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   type Node,
   type Edge,
   type Connection,
@@ -13,9 +15,10 @@ import {
   type EdgeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useMemo, useEffect } from 'react';
-import { useNodeGraphStore, type GraphNode, type GraphEdge } from '../../stores/nodeGraph.js';
+import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
+import { useNodeGraphStore, type GraphNode, type GraphEdge, type NodeGraphState } from '../../stores/nodeGraph.js';
 import { NODE_DEFINITIONS } from '../../types/nodeGraph.js';
+import type { NodeType } from '../../types/nodeGraph.js';
 import { InputNode } from './nodes/InputNode.js';
 import { OutputNode } from './nodes/OutputNode.js';
 import { TrimNode } from './nodes/TrimNode.js';
@@ -25,6 +28,9 @@ import { TranscodeNode } from './nodes/TranscodeNode.js';
 import { ConcatNode } from './nodes/ConcatNode.js';
 import { BaseNode } from './nodes/BaseNode.js';
 import { ResizeHandle } from './nodes/ResizeHandle.js';
+import { ConnectionHandle } from './nodes/ConnectionHandle.js';
+import { HandlePalette } from './HandlePalette.js';
+import { Handle, Position } from '@xyflow/react';
 
 function makeBaseNodeComponent(type: keyof typeof NODE_DEFINITIONS) {
   return function GenericNode(props: any) {
@@ -72,12 +78,10 @@ function makeBaseNodeComponent(type: keyof typeof NODE_DEFINITIONS) {
         </div>
 
         {def.inputs.map((port) => (
-          <Handle key={port.id} type="target" position={Position.Left} id={port.id}
-            className={`!w-3 !h-3 !rounded-full ${port.type === 'video' ? 'bg-blue-400' : port.type === 'audio' ? 'bg-purple-400' : 'bg-green-400'} !border-2 !border-slate-900`} />
+          <ConnectionHandle key={port.id} type="target" position={Position.Left} id={port.id} portType={port.type} />
         ))}
         {def.outputs.map((port) => (
-          <Handle key={port.id} type="source" position={Position.Right} id={port.id}
-            className={`!w-3 !h-3 !rounded-full ${port.type === 'video' ? 'bg-blue-400' : port.type === 'audio' ? 'bg-purple-400' : 'bg-green-400'} !border-2 !border-slate-900`} />
+          <ConnectionHandle key={port.id} type="source" position={Position.Right} id={port.id} portType={port.type} />
         ))}
       </div>
     );
@@ -101,78 +105,6 @@ function getConfigSummary(type: keyof typeof NODE_DEFINITIONS, config: Record<st
     default: return NODE_DEFINITIONS[type]?.label || 'Configure';
   }
 }
-
-function InlineConfig({ type, config, updateConfig }: {
-  type: keyof typeof NODE_DEFINITIONS;
-  config: Record<string, any>;
-  updateConfig: (updates: Record<string, any>) => void;
-}) {
-  switch (type) {
-    case 'filter':
-      return (
-        <>
-          <div className="space-y-1">
-            <label className="text-[10px] text-slate-500">Brightness: {config.brightness ?? 0}</label>
-            <input type="range" min={-1} max={1} step={0.01} value={config.brightness ?? 0}
-              onChange={(e) => updateConfig({ brightness: parseFloat(e.target.value) })}
-              className="w-full accent-blue-500" onClick={(e) => e.stopPropagation()} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] text-slate-500">Contrast: {config.contrast ?? 1}</label>
-            <input type="range" min={0} max={3} step={0.01} value={config.contrast ?? 1}
-              onChange={(e) => updateConfig({ contrast: parseFloat(e.target.value) })}
-              className="w-full accent-blue-500" onClick={(e) => e.stopPropagation()} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] text-slate-500">Saturation: {config.saturation ?? 1}</label>
-            <input type="range" min={0} max={3} step={0.01} value={config.saturation ?? 1}
-              onChange={(e) => updateConfig({ saturation: parseFloat(e.target.value) })}
-              className="w-full accent-blue-500" onClick={(e) => e.stopPropagation()} />
-          </div>
-        </>
-      );
-    case 'speed':
-      return (
-        <div className="space-y-1">
-          <label className="text-[10px] text-slate-500">Speed: {config.speed ?? 1}x</label>
-          <input type="range" min={0.25} max={4} step={0.25} value={config.speed ?? 1}
-            onChange={(e) => updateConfig({ speed: parseFloat(e.target.value) })}
-            className="w-full accent-blue-500" onClick={(e) => e.stopPropagation()} />
-        </div>
-      );
-    case 'rotate':
-      return (
-        <div className="space-y-1">
-          <label className="text-[10px] text-slate-500">Angle</label>
-          <select value={config.angle ?? 90}
-            onChange={(e) => updateConfig({ angle: parseInt(e.target.value) })}
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
-            onClick={(e) => e.stopPropagation()}>
-            <option value={90}>90° Clockwise</option>
-            <option value={180}>180°</option>
-            <option value={270}>90° Counter-clockwise</option>
-          </select>
-        </div>
-      );
-    case 'flip':
-      return (
-        <div className="space-y-1">
-          <label className="text-[10px] text-slate-500">Direction</label>
-          <select value={config.direction || 'horizontal'}
-            onChange={(e) => updateConfig({ direction: e.target.value })}
-            className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
-            onClick={(e) => e.stopPropagation()}>
-            <option value="horizontal">Horizontal</option>
-            <option value="vertical">Vertical</option>
-          </select>
-        </div>
-      );
-    default:
-      return <div className="text-[10px] text-slate-500">No configurable options</div>;
-  }
-}
-
-import { Handle, Position } from '@xyflow/react';
 
 const nodeTypes: NodeTypes = {
   fileInput: InputNode,
@@ -239,11 +171,210 @@ interface NodeCanvasProps {
   onFileUpload: (file: File) => Promise<any>;
 }
 
-export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanvasProps) {
+interface HandlePaletteState {
+  position: { x: number; y: number };
+  portType: 'video' | 'audio' | 'image';
+  direction: 'source' | 'target';
+  currentNodeType?: string;
+  mode: 'click' | 'drag-abandon';
+  sourceNodeId?: string;
+  sourceHandleId?: string;
+  targetNodeId?: string;
+  targetHandleId?: string;
+}
+
+interface FlowInnerDataProps {
+  nodes: Node[];
+  edges: Edge[];
+  onNodesChange: (changes: any[]) => void;
+  onEdgesChange: (changes: any[]) => void;
+  onConnect: (params: Connection) => void;
+  onConnectStart: (_event: any, params: any) => void;
+  onNodeClick: (_event: React.MouseEvent, node: Node) => void;
+  onPaneClick: () => void;
+  onNodeDragStop: (_event: React.MouseEvent, node: Node) => void;
+  onNodesDelete: (deletedNodes: Node[]) => void;
+  onEdgesDelete: (deletedEdges: Edge[]) => void;
+  handlePalette: HandlePaletteState | null;
+  setHandlePalette: React.Dispatch<React.SetStateAction<HandlePaletteState | null>>;
+  store: NodeGraphState;
+  storeEdges: GraphEdge[];
+  pendingConnectionRef: React.MutableRefObject<{
+    portType: 'video' | 'audio' | 'image';
+    direction: 'source' | 'target';
+    currentNodeType?: string;
+    sourceNodeId?: string;
+    sourceHandleId?: string;
+    targetNodeId?: string;
+    targetHandleId?: string;
+  } | null>;
+}
+
+function FlowWithProvider(props: FlowInnerDataProps) {
+  return (
+    <ReactFlowProvider>
+      <FlowInner {...props} />
+    </ReactFlowProvider>
+  );
+}
+
+function FlowInner({
+  nodes, edges, onNodesChange, onEdgesChange, onConnect, onConnectStart,
+  onNodeClick, onPaneClick, onNodeDragStop, onNodesDelete, onEdgesDelete,
+  handlePalette, setHandlePalette, store, storeEdges, pendingConnectionRef,
+}: FlowInnerDataProps) {
+  const { screenToFlowPosition } = useReactFlow();
+  const handlePaletteRef = useRef(handlePalette);
+  handlePaletteRef.current = handlePalette;
+  const justEndedConnection = useRef(false);
+
+  const handleConnectEnd = useCallback((event: any) => {
+    const pending = pendingConnectionRef.current;
+    if (!pending) return;
+
+    const targetWasHit = event?.target?.classList?.contains('react-flow__handle');
+    if (targetWasHit) {
+      pendingConnectionRef.current = null;
+      return;
+    }
+
+    const screenX = event.clientX - 20;
+    const screenY = event.clientY - 40;
+
+    justEndedConnection.current = true;
+    setHandlePalette({
+      position: { x: screenX, y: screenY },
+      ...pending,
+      mode: 'drag-abandon',
+    });
+    pendingConnectionRef.current = null;
+  }, [setHandlePalette, pendingConnectionRef]);
+
+  const handlePaneClick = useCallback(() => {
+    if (justEndedConnection.current) {
+      justEndedConnection.current = false;
+      return;
+    }
+    onPaneClick();
+  }, [onPaneClick]);
+
+  const handlePaletteSelect = useCallback((nodeType: NodeType) => {
+    const palette = handlePaletteRef.current;
+    if (!palette) return;
+
+    const def = NODE_DEFINITIONS[nodeType];
+    if (!def) return;
+
+    const flowPos = screenToFlowPosition(palette.position);
+
+    const newNodeId = crypto.randomUUID();
+    const newNode = {
+      id: newNodeId,
+      type: nodeType,
+      position: flowPos,
+      data: { config: { ...def.defaultConfig }, status: 'idle' as const, definition: def },
+    };
+    store.addNode(newNode);
+
+    if (palette.direction === 'source' && palette.sourceNodeId && palette.sourceHandleId) {
+      const compatibleInput = def.inputs.find(p => p.type === palette.portType);
+      if (compatibleInput) {
+        const newEdge: GraphEdge = {
+          id: `${palette.sourceNodeId}-${newNodeId}-${palette.sourceHandleId}-${compatibleInput.id}`,
+          source: palette.sourceNodeId,
+          target: newNodeId,
+          sourceHandle: palette.sourceHandleId,
+          targetHandle: compatibleInput.id,
+          type: palette.portType,
+        };
+        store.addEdge(newEdge);
+      }
+    } else if (palette.direction === 'target' && palette.targetNodeId && palette.targetHandleId) {
+      const compatibleOutput = def.outputs.find(p => p.type === palette.portType);
+      if (compatibleOutput) {
+        const newEdge: GraphEdge = {
+          id: `${newNodeId}-${palette.targetNodeId}-${compatibleOutput.id}-${palette.targetHandleId}`,
+          source: newNodeId,
+          target: palette.targetNodeId,
+          sourceHandle: compatibleOutput.id,
+          targetHandle: palette.targetHandleId,
+          type: palette.portType,
+        };
+        store.addEdge(newEdge);
+      }
+    }
+
+    setHandlePalette(null);
+  }, [screenToFlowPosition, store, setHandlePalette]);
+
+  return (
+    <>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={handleConnectEnd}
+        onNodeClick={onNodeClick}
+        onPaneClick={handlePaneClick}
+        onNodeDragStop={onNodeDragStop}
+        onNodesDelete={onNodesDelete}
+        onEdgesDelete={onEdgesDelete}
+        deleteKeyCode={['Backspace', 'Delete']}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        fitView
+        attributionPosition="bottom-left"
+        defaultEdgeOptions={{
+          animated: true,
+          style: { stroke: '#60a5fa', strokeWidth: 2 },
+        }}
+        connectionLineStyle={{ stroke: '#60a5fa', strokeWidth: 2 }}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background color="#334155" gap={20} size={1} />
+        <Controls className="!bg-slate-800 !border-slate-700 !shadow-lg" />
+        <MiniMap
+          nodeColor={() => '#3b82f6'}
+          className="!bg-slate-800 !border-slate-700"
+          maskColor="rgba(0,0,0,0.5)"
+        />
+      </ReactFlow>
+      {handlePalette && (
+        <HandlePalette
+          position={handlePalette.position}
+          portType={handlePalette.portType}
+          direction={handlePalette.direction}
+          currentNodeType={handlePalette.currentNodeType}
+          onSelect={handlePaletteSelect}
+          onClose={() => setHandlePalette(null)}
+        />
+      )}
+    </>
+  );
+}
+
+function FlowContent({ sessionId, files, onFileUpload, storeNodes, storeEdges }: {
+  sessionId: string;
+  files: FileItem[];
+  onFileUpload: (file: File) => Promise<any>;
+  storeNodes: GraphNode[];
+  storeEdges: GraphEdge[];
+}) {
   const store = useNodeGraphStore();
 
-  const storeNodes = store.nodes;
-  const storeEdges = store.edges;
+  const [handlePalette, setHandlePalette] = useState<HandlePaletteState | null>(null);
+  const pendingConnectionRef = useRef<{
+    portType: 'video' | 'audio' | 'image';
+    direction: 'source' | 'target';
+    currentNodeType?: string;
+    sourceNodeId?: string;
+    sourceHandleId?: string;
+    targetNodeId?: string;
+    targetHandleId?: string;
+  } | null>(null);
 
   const rfNodes: Node[] = useMemo(
     () =>
@@ -258,7 +389,7 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
         }
 
         let fileId = n.data.config?.fileId;
-        
+
         if (!fileId && n.type !== 'fileInput') {
           const inputEdge = storeEdges.find(
             (e) => e.target === n.id && e.targetHandle === 'video'
@@ -344,7 +475,6 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
       const target = params.target!;
       const targetHandle = params.targetHandle!;
 
-      // Remove existing edges going to the same target handle (one-to-one relationship)
       const edgesToRemove = storeEdges.filter(
         (e) => e.target === target && e.targetHandle === targetHandle
       );
@@ -374,6 +504,44 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
     [store, storeEdges, setEdges]
   );
 
+  const onConnectStart = useCallback((_event: any, params: any) => {
+    if (params?.nodeId && params?.handleId && params?.handleType) {
+      const sourceNode = storeNodes.find(n => n.id === params.nodeId);
+      pendingConnectionRef.current = {
+        portType: 'video',
+        direction: params.handleType as 'source' | 'target',
+        currentNodeType: sourceNode?.type,
+        sourceNodeId: params.handleType === 'source' ? params.nodeId : undefined,
+        sourceHandleId: params.handleType === 'source' ? params.handleId : undefined,
+        targetNodeId: params.handleType === 'target' ? params.nodeId : undefined,
+        targetHandleId: params.handleType === 'target' ? params.handleId : undefined,
+      };
+    }
+  }, [storeNodes]);
+
+  const handleHandleClick = useCallback((info: { handleId: string; portType: string; type: 'source' | 'target' }, screenPosition: { x: number; y: number }) => {
+    const sourceNode = storeNodes.find(n => {
+      const def = NODE_DEFINITIONS[n.type];
+      if (!def) return false;
+      if (info.type === 'source') {
+        return def.outputs.some(p => p.id === info.handleId);
+      }
+      return def.inputs.some(p => p.id === info.handleId);
+    });
+
+    setHandlePalette({
+      position: { x: screenPosition.x + 200, y: screenPosition.y },
+      portType: info.portType as 'video' | 'audio' | 'image',
+      direction: info.type,
+      currentNodeType: sourceNode?.type,
+      mode: 'click',
+      sourceNodeId: info.type === 'source' ? sourceNode?.id : undefined,
+      sourceHandleId: info.type === 'source' ? info.handleId : undefined,
+      targetNodeId: info.type === 'target' ? sourceNode?.id : undefined,
+      targetHandleId: info.type === 'target' ? info.handleId : undefined,
+    });
+  }, [storeNodes]);
+
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       store.selectNode(node.id);
@@ -383,6 +551,7 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
 
   const onPaneClick = useCallback(() => {
     store.selectNode(null);
+    setHandlePalette(null);
   }, [store]);
 
   const onNodeDragStop = useCallback(
@@ -410,48 +579,57 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
     [store]
   );
 
-  const onNodeResize = useCallback(
-    (_event: any, node: Node) => {
-      if (node.width && node.height) {
-        store.updateNodeSize(node.id, { width: node.width, height: node.height });
-      }
-    },
-    [store]
+  const nodesWithHandleCallbacks = useMemo(() => {
+    return nodes.map(node => {
+      const nodeDef = NODE_DEFINITIONS[node.type as keyof typeof NODE_DEFINITIONS];
+      if (!nodeDef) return node;
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          onHandleClick: handleHandleClick,
+          nodeType: node.type,
+        },
+      };
+    });
+  }, [nodes, handleHandleClick]);
+
+  return (
+    <FlowWithProvider
+      nodes={nodesWithHandleCallbacks}
+      edges={edges}
+      onNodesChange={handleNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      onConnectStart={onConnectStart}
+      onNodeClick={onNodeClick}
+      onPaneClick={onPaneClick}
+      onNodeDragStop={onNodeDragStop}
+      onNodesDelete={onNodesDelete}
+      onEdgesDelete={onEdgesDelete}
+      handlePalette={handlePalette}
+      setHandlePalette={setHandlePalette}
+      store={store}
+      storeEdges={storeEdges}
+      pendingConnectionRef={pendingConnectionRef}
+    />
   );
+}
+
+export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanvasProps) {
+  const store = useNodeGraphStore();
+  const storeNodes = store.nodes;
+  const storeEdges = store.edges;
 
   return (
     <div className="flex-1 h-full">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={handleNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-        onNodeDragStop={onNodeDragStop}
-        onNodesDelete={onNodesDelete}
-        onEdgesDelete={onEdgesDelete}
-        deleteKeyCode={['Backspace', 'Delete']}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        fitView
-        attributionPosition="bottom-left"
-        defaultEdgeOptions={{
-          animated: true,
-          style: { stroke: '#60a5fa', strokeWidth: 2 },
-        }}
-        connectionLineStyle={{ stroke: '#60a5fa', strokeWidth: 2 }}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background color="#334155" gap={20} size={1} />
-        <Controls className="!bg-slate-800 !border-slate-700 !shadow-lg" />
-        <MiniMap
-          nodeColor={() => '#3b82f6'}
-          className="!bg-slate-800 !border-slate-700"
-          maskColor="rgba(0,0,0,0.5)"
-        />
-      </ReactFlow>
+      <FlowContent
+        sessionId={sessionId}
+        files={files}
+        onFileUpload={onFileUpload}
+        storeNodes={storeNodes}
+        storeEdges={storeEdges}
+      />
     </div>
   );
 }

@@ -26,7 +26,7 @@ export interface GraphEdge {
   type: 'video' | 'audio' | 'image';
 }
 
-interface NodeGraphState {
+export interface NodeGraphState {
   sessionId: string | null;
   nodes: GraphNode[];
   edges: GraphEdge[];

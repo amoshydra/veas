@@ -1,10 +1,11 @@
-import { Handle, Position, NodeResizeControl } from '@xyflow/react';
+import { Position } from '@xyflow/react';
 import type { NodeDefinition, PortDefinition } from '../../../types/nodeGraph.js';
 import { NODE_DEFINITIONS } from '../../../types/nodeGraph.js';
 import { useContextMenu } from './useContextMenu.js';
 import { NodeContextMenu } from './NodeContextMenu.js';
 import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
 import { ResizeHandle } from './ResizeHandle.js';
+import { ConnectionHandle } from './ConnectionHandle.js';
 
 interface BaseNodeProps {
   id: string;
@@ -36,13 +37,12 @@ const statusBg = {
 };
 
 function PortHandle({ port, type }: { port: PortDefinition; type: 'source' | 'target' }) {
-  const color = port.type === 'video' ? 'bg-blue-400' : port.type === 'audio' ? 'bg-purple-400' : 'bg-green-400';
   return (
-    <Handle
+    <ConnectionHandle
       type={type}
       position={type === 'target' ? Position.Left : Position.Right}
       id={port.id}
-      className={`!w-3 !h-3 !rounded-full ${color} !border-2 !border-slate-900`}
+      portType={port.type}
     />
   );
 }

@@ -1,9 +1,10 @@
-import { Handle, Position, NodeResizeControl } from '@xyflow/react';
+import { Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
 import { useContextMenu } from './useContextMenu.js';
 import { NodeContextMenu } from './NodeContextMenu.js';
 import { ResizeHandle } from './ResizeHandle.js';
+import { ConnectionHandle } from './ConnectionHandle.js';
 
 export function OutputNode({ id, data, selected }: NodeProps) {
   const config = data.config as Record<string, any>;
@@ -35,11 +36,11 @@ export function OutputNode({ id, data, selected }: NodeProps) {
       style={{ touchAction: 'none' }}
     >
       <ResizeHandle minWidth={220} selected={selected} />
-      <Handle
+      <ConnectionHandle
         type="target"
         position={Position.Left}
         id="video"
-        className="!w-3 !h-3 !rounded-full bg-blue-400 !border-2 !border-slate-900"
+        portType="video"
       />
       <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700">
         <span className="text-lg">💾</span>

@@ -1,10 +1,11 @@
-import { Handle, Position, NodeResizeControl } from '@xyflow/react';
+import { Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useRef } from 'react';
 import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
 import { useContextMenu } from './useContextMenu.js';
 import { NodeContextMenu } from './NodeContextMenu.js';
 import { ResizeHandle } from './ResizeHandle.js';
+import { ConnectionHandle } from './ConnectionHandle.js';
 
 interface FileItem {
   id: string;
@@ -149,11 +150,11 @@ export function InputNode({ id, data, selected }: NodeProps) {
         )}
       </div>
 
-      <Handle
+      <ConnectionHandle
         type="source"
         position={Position.Right}
         id="video"
-        className="!w-3 !h-3 !rounded-full bg-blue-400 !border-2 !border-slate-900"
+        portType="video"
       />
     </div>
   );
