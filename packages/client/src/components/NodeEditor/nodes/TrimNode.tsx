@@ -28,7 +28,6 @@ export function TrimNode({ id, data, selected }: NodeProps) {
   const error = data.error as string | undefined;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [frameDuration, setFrameDuration] = useState(1 / 30);
@@ -189,13 +188,15 @@ export function TrimNode({ id, data, selected }: NodeProps) {
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !showPreview) return;
+    if (!video) return;
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
       if ((config.end ?? 10) > video.duration) {
         updateConfig({ end: video.duration });
       }
+      video.currentTime = start;
+      setCurrentTime(start);
     };
 
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -203,11 +204,11 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     return () => {
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
-  }, [showPreview, config.end, updateConfig]);
+  }, [config.end, updateConfig, start]);
 
   useEffect(() => {
     const rawVideo = videoRef.current;
-    if (!rawVideo || !showPreview) return;
+    if (!rawVideo) return;
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const videoEl = rawVideo;
@@ -249,11 +250,11 @@ export function TrimNode({ id, data, selected }: NodeProps) {
       loopCheckActive.current = false;
       videoEl.removeEventListener('timeupdate', onTimeUpdate);
     };
-  }, [showPreview, loopEnabled, isPlaying]);
+  }, [loopEnabled, isPlaying]);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !showPreview) return;
+    if (!video) return;
 
     let cancelled = false;
 
@@ -284,7 +285,7 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     return () => {
       cancelled = true;
     };
-  }, [showPreview]);
+  }, []);
 
   const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef: contextMenuRef } = useContextMenu();
 
@@ -322,31 +323,24 @@ export function TrimNode({ id, data, selected }: NodeProps) {
             />
           )}
         </div>
-        {hasFile && (
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowPreview(!showPreview); }}
-            className="text-xs text-slate-400 hover:text-slate-200 px-1.5 py-0.5 rounded hover:bg-slate-700"
-            title={showPreview ? 'Hide preview' : 'Show preview'}
-          >
-            {showPreview ? '▲' : '▼'}
-          </button>
-        )}
         {status === 'completed' && <span className="text-xs text-green-400">✓</span>}
         {status === 'processing' && <span className="text-xs text-blue-400 animate-pulse">●</span>}
         {status === 'error' && <span className="text-xs text-red-400">✗</span>}
       </div>
 
-      {!showPreview && (
-        <div className="px-3 py-2 text-xs text-slate-400 cursor-default">
-          {error ? (
-            <div className="text-red-400 truncate">{error}</div>
-          ) : (
-            <span>{formatTime(start)} → {formatTime(end)}</span>
-          )}
+      {error && (
+        <div className="px-3 py-2 text-xs text-red-400">
+          {error}
         </div>
       )}
 
-      {hasFile && showPreview && (
+      {!hasFile && (
+        <div className="px-3 py-2 text-xs text-slate-400 cursor-default">
+          <span>Connect an input to preview</span>
+        </div>
+      )}
+
+      {hasFile && (
         <div className="nodrag cursor-default px-3 py-2 space-y-3">
           <video
             ref={videoRef}
