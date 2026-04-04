@@ -363,7 +363,49 @@ export async function executePipeline(
       );
 
       nodeOutputs.set(node.id, outputPath);
-      jobResults.push({ nodeId: node.id, jobId, status: "completed", cachePath: outputPath });
+
+      const fileId = uuidv4();
+      let duration: number | null = null;
+      let width: number | null = null;
+      let height: number | null = null;
+      let size = 0;
+
+      try {
+        size = statSync(outputPath).size;
+        const probe = await ffprobe(outputPath);
+        duration = parseFloat(probe.format.duration) || null;
+        const videoStream = probe.streams.find((s: any) => s.codec_type === "video");
+        if (videoStream) {
+          width = (videoStream as any).width ?? null;
+          height = (videoStream as any).height ?? null;
+        }
+      } catch { /* non-critical */ }
+
+      db.insert(files)
+        .values({
+          id: fileId,
+          sessionId,
+          filename: basename(outputPath),
+          path: outputPath,
+          size,
+          mimeType: "video/mp4",
+          duration,
+          width,
+          height,
+        })
+        .run();
+
+      db.update(jobs)
+        .set({
+          status: "completed",
+          progress: 100,
+          outputFile: fileId,
+          completedAt: new Date().toISOString(),
+        })
+        .where(eq(jobs.id, jobId))
+        .run();
+
+      jobResults.push({ nodeId: node.id, jobId, status: "completed", outputFile: fileId, cachePath: outputPath });
     } catch (err: any) {
       db.update(jobs)
         .set({

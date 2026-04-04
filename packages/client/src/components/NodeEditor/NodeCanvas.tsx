@@ -377,8 +377,18 @@ function FlowContent({ sessionId, files, onFileUpload, storeNodes, storeEdges }:
   } | null>(null);
 
   const rfNodes: Node[] = useMemo(
-    () =>
-      storeNodes.map((n) => {
+    () => {
+      const resolveFileId = (nodeId: string): string | undefined => {
+        const node = storeNodes.find(n => n.id === nodeId);
+        if (!node || node.type === 'fileInput') return node?.data?.config?.fileId;
+        if (node.data?.outputId) return node.data.outputId;
+        if (node.data?.config?.fileId) return node.data.config.fileId;
+        const inputEdge = storeEdges.find(e => e.target === nodeId && e.targetHandle === 'video');
+        if (inputEdge) return resolveFileId(inputEdge.source);
+        return undefined;
+      };
+
+      return storeNodes.map((n) => {
         if (!n.data) {
           return {
             id: n.id,
@@ -388,24 +398,7 @@ function FlowContent({ sessionId, files, onFileUpload, storeNodes, storeEdges }:
           };
         }
 
-        let fileId = n.data.config?.fileId;
-
-        if (!fileId && n.type !== 'fileInput') {
-          const inputEdge = storeEdges.find(
-            (e) => e.target === n.id && e.targetHandle === 'video'
-          );
-          if (inputEdge) {
-            const sourceNode = storeNodes.find(
-              (src) => src.id === inputEdge.source
-            );
-            if (sourceNode?.data?.config?.fileId) {
-              fileId = sourceNode.data.config.fileId;
-            }
-            if (sourceNode?.data?.outputId) {
-              fileId = sourceNode.data.outputId;
-            }
-          }
-        }
+        const fileId = n.type === 'fileInput' ? n.data.config?.fileId : resolveFileId(n.id);
 
         return {
           id: n.id,
@@ -423,7 +416,8 @@ function FlowContent({ sessionId, files, onFileUpload, storeNodes, storeEdges }:
             onFileUpload,
           },
         };
-      }),
+      });
+    },
     [storeNodes, storeEdges, files, onFileUpload, sessionId]
   );
 
