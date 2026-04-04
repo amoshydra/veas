@@ -109,4 +109,34 @@ export const api = {
   // SSE
   subscribeToJob: (jobId: string) =>
     new EventSource(`${API_BASE}/jobs/${jobId}/stream`),
+
+  // Pipelines
+  executePipeline: (
+    sessionId: string,
+    nodes: Array<{ id: string; type: string; config: Record<string, any> }>,
+    connections: Array<{ id: string; fromNode: string; fromPort: string; toNode: string; toPort: string }>
+  ) =>
+    fetch(`${API_BASE}/pipelines/execute`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ sessionId, nodes, connections }),
+    }).then((r) => r.json()),
+
+  saveNodeGraph: (
+    sessionId: string,
+    data: {
+      nodes?: any[];
+      connections?: any[];
+      viewport?: { x: number; y: number; zoom: number };
+      name?: string;
+    }
+  ) =>
+    fetch(`${API_BASE}/pipelines/save`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ sessionId, ...data }),
+    }).then((r) => r.json()),
+
+  getNodeGraph: (sessionId: string) =>
+    fetch(`${API_BASE}/pipelines/${sessionId}`, { headers }).then((r) => r.json()),
 };

@@ -6,6 +6,7 @@ import sessionsRoute from "./routes/sessions.js";
 import jobsRoute from "./routes/jobs.js";
 import filesRoute from "./routes/files.js";
 import opsRoute from "./routes/operations.js";
+import pipelinesRoute from "./routes/pipelines.js";
 
 const app = new Hono();
 
@@ -26,6 +27,7 @@ app.route("/api/sessions", sessionsRoute);
 app.route("/api/jobs", jobsRoute);
 app.route("/api/files", filesRoute);
 app.route("/api/operations", opsRoute);
+app.route("/api/pipelines", pipelinesRoute);
 
 const port = parseInt(process.env.PORT || "3001");
 

@@ -257,6 +257,17 @@ export function buildFfmpegArgs(
       ];
     }
 
+    case "output": {
+      const format = params.format || "mp4";
+      return [
+        "-i", inputFiles[0],
+        "-c:v", "libx264",
+        "-crf", String(params.quality ?? 23),
+        "-preset", "medium",
+        "-c:a", "aac",
+      ];
+    }
+
     default:
       throw new Error(`Unknown operation: ${operation}`);
   }

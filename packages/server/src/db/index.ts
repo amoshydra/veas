@@ -45,9 +45,36 @@ sqlite.exec(`
     input_files TEXT NOT NULL DEFAULT '[]',
     output_file TEXT,
     error TEXT,
+    pipeline_id TEXT,
+    node_id TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     completed_at TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS node_graphs (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    name TEXT NOT NULL DEFAULT 'Untitled',
+    nodes TEXT NOT NULL DEFAULT '[]',
+    connections TEXT NOT NULL DEFAULT '[]',
+    viewport TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
+
+function addColumnIfNotExists(table: string, column: string, type: string) {
+  const columns = sqlite.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  if (!columns.some((c) => c.name === column)) {
+    sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  }
+}
+
+try {
+  addColumnIfNotExists("jobs", "pipeline_id", "TEXT");
+  addColumnIfNotExists("jobs", "node_id", "TEXT");
+} catch {
+  // Table might not exist yet, ignore
+}
 
 export const db = drizzle(sqlite, { schema });

@@ -37,6 +37,21 @@ export const jobs = sqliteTable("jobs", {
   inputFiles: text("input_files").notNull().default("[]"),
   outputFile: text("output_file"),
   error: text("error"),
+  pipelineId: text("pipeline_id"),
+  nodeId: text("node_id"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   completedAt: text("completed_at"),
+});
+
+export const nodeGraphs = sqliteTable("node_graphs", {
+  id: text("id").primaryKey(),
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => sessions.id, { onDelete: "cascade" }),
+  name: text("name").notNull().default("Untitled"),
+  nodes: text("nodes").notNull().default("[]"),
+  connections: text("connections").notNull().default("[]"),
+  viewport: text("viewport").notNull().default("{}"),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+  updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
 });
