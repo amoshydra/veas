@@ -5,6 +5,7 @@ import { nodeGraphs, jobs } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { executePipeline } from "../services/pipeline.js";
 import { progressBus } from "../services/progress.js";
+import type { PipelineEvent } from "../services/progress.js";
 
 const pipelinesRoute = new Hono();
 
@@ -16,40 +17,79 @@ pipelinesRoute.post("/execute", async (c) => {
     return c.json({ error: "Missing required fields: sessionId, nodes, connections" }, 400);
   }
 
-  try {
-    const result = await executePipeline(sessionId, nodes, connections);
+  const pipelineId = uuidv4();
 
-    // Update node graph
-    const existing = db
-      .select()
-      .from(nodeGraphs)
-      .where(eq(nodeGraphs.sessionId, sessionId))
-      .get();
+  // Start pipeline in background, return immediately
+  executePipeline(sessionId, nodes, connections, pipelineId).catch((err) => {
+    console.error("Pipeline error:", err.message);
+  });
 
-    if (existing) {
-      db.update(nodeGraphs)
-        .set({
-          nodes: JSON.stringify(nodes),
-          connections: JSON.stringify(connections),
-          updatedAt: new Date().toISOString(),
-        })
-        .where(eq(nodeGraphs.id, existing.id))
-        .run();
-    } else {
-      db.insert(nodeGraphs)
-        .values({
-          id: uuidv4(),
-          sessionId,
-          nodes: JSON.stringify(nodes),
-          connections: JSON.stringify(connections),
-        })
-        .run();
-    }
+  // Update node graph
+  const existing = db
+    .select()
+    .from(nodeGraphs)
+    .where(eq(nodeGraphs.sessionId, sessionId))
+    .get();
 
-    return c.json(result, 200);
-  } catch (err: any) {
-    return c.json({ error: err.message }, 400);
+  if (existing) {
+    db.update(nodeGraphs)
+      .set({
+        nodes: JSON.stringify(nodes),
+        connections: JSON.stringify(connections),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(nodeGraphs.id, existing.id))
+      .run();
+  } else {
+    db.insert(nodeGraphs)
+      .values({
+        id: uuidv4(),
+        sessionId,
+        nodes: JSON.stringify(nodes),
+        connections: JSON.stringify(connections),
+      })
+      .run();
   }
+
+  return c.json({ pipelineId }, 200);
+});
+
+pipelinesRoute.get("/stream/:pipelineId", async (c) => {
+  const pipelineId = c.req.param("pipelineId");
+
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        const encoder = new TextEncoder();
+
+        const send = (event: string, data: unknown) => {
+          controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+        };
+
+        const onEvent = (data: PipelineEvent) => {
+          send(data.type, data);
+          if (data.type === "nodeError") {
+            cleanup();
+            controller.close();
+          }
+        };
+
+        const cleanup = () => {
+          progressBus.off(`pipeline:${pipelineId}`, onEvent);
+        };
+
+        progressBus.on(`pipeline:${pipelineId}`, onEvent);
+        c.req.raw.signal.addEventListener("abort", cleanup);
+      },
+    }),
+    {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    }
+  );
 });
 
 pipelinesRoute.post("/save", async (c) => {

@@ -97,21 +97,44 @@ export default function NodeEditor() {
 
       if (result.error) {
         setExecutionError(result.error);
-        for (const node of nodes) {
-          store.updateNodeStatus(node.id, 'error', undefined, result.error);
-        }
+        setIsExecuting(false);
       } else {
-        for (const job of result.jobs) {
-          store.updateNodeStatus(job.nodeId, job.status, job.outputFile, undefined, job.cachePath);
-        }
-      }
+        const pipelineId = result.pipelineId;
+        const eventSource = new EventSource(`/api/pipelines/stream/${pipelineId}`);
+        let completedCount = 0;
+        const totalNodes = nodes.length;
 
-      queryClient.invalidateQueries({ queryKey: ['files', sessionId] });
-      queryClient.invalidateQueries({ queryKey: ['jobs', sessionId] });
+        const finishExecution = () => {
+          eventSource.close();
+          setIsExecuting(false);
+          queryClient.invalidateQueries({ queryKey: ['files', sessionId] });
+          queryClient.invalidateQueries({ queryKey: ['jobs', sessionId] });
+        };
+
+        eventSource.addEventListener('nodeComplete', (e) => {
+          const data = JSON.parse(e.data);
+          store.updateNodeStatus(data.nodeId, data.status, data.outputFile, undefined, data.cachePath);
+          completedCount++;
+          if (completedCount >= totalNodes) {
+            finishExecution();
+          }
+        });
+
+        eventSource.addEventListener('nodeError', (e) => {
+          const data = JSON.parse(e.data);
+          store.updateNodeStatus(data.nodeId, 'error', undefined, data.error);
+          setExecutionError(data.error);
+          finishExecution();
+        });
+
+        eventSource.addEventListener('error', () => {
+          eventSource.close();
+          setIsExecuting(false);
+        });
+      }
     } catch (err: any) {
       setExecutionError(err.message || 'Pipeline execution failed');
       console.error('Pipeline execution failed:', err);
-    } finally {
       setIsExecuting(false);
     }
   }, [sessionId, store, queryClient]);

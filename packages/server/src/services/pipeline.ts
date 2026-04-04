@@ -6,7 +6,7 @@ import { statSync, mkdirSync, existsSync, readFileSync, writeFileSync, unlinkSyn
 import { basename, dirname, resolve } from "node:path";
 import { runFfmpeg, generateThumbnail, ffprobe } from "./ffmpeg.js";
 import { buildFfmpegArgs } from "./operations.js";
-import { emitProgress } from "./progress.js";
+import { emitProgress, emitPipelineEvent } from "./progress.js";
 import crypto from "crypto";
 
 const CACHE_DIR = resolve(process.cwd(), "./data/cache");
@@ -185,9 +185,10 @@ async function executeNode(
 export async function executePipeline(
   sessionId: string,
   nodes: PipelineNode[],
-  connections: PipelineConnection[]
+  connections: PipelineConnection[],
+  pipelineId?: string
 ): Promise<{ pipelineId: string; jobs: Array<{ nodeId: string; jobId: string; status: string; outputFile?: string }> }> {
-  const pipelineId = uuidv4();
+  const pid = pipelineId || uuidv4();
   const sortedNodes = topologicalSort(nodes, connections);
   const nodeOutputs = new Map<string, string>();
   const jobResults: Array<{ nodeId: string; jobId: string; status: string; outputFile?: string; cachePath?: string }> = [];
@@ -220,10 +221,18 @@ export async function executePipeline(
           progress: 100,
           inputFiles: JSON.stringify([]),
           outputFile: fileRecord.id,
-          pipelineId,
+          pipelineId: pid,
           nodeId: node.id,
         })
         .run();
+
+      emitPipelineEvent({
+        type: "nodeComplete",
+        pipelineId: pid,
+        nodeId: node.id,
+        status: "completed",
+        outputFile: fileRecord.id,
+      });
 
       jobResults.push({ nodeId: node.id, jobId, status: "completed", outputFile: fileRecord.id });
       continue;
@@ -247,7 +256,7 @@ export async function executePipeline(
           status: "queued",
           progress: 0,
           inputFiles: JSON.stringify(inputFilePaths),
-          pipelineId,
+          pipelineId: pid,
           nodeId: node.id,
         })
         .run();
@@ -308,6 +317,15 @@ export async function executePipeline(
           .run();
 
         nodeOutputs.set(node.id, outputPath);
+
+        emitPipelineEvent({
+          type: "nodeComplete",
+          pipelineId: pid,
+          nodeId: node.id,
+          status: "completed",
+          outputFile: fileId,
+        });
+
         jobResults.push({ nodeId: node.id, jobId, status: "completed", outputFile: fileId });
       } catch (err: any) {
         db.update(jobs)
@@ -318,6 +336,14 @@ export async function executePipeline(
           })
           .where(eq(jobs.id, jobId))
           .run();
+
+        emitPipelineEvent({
+          type: "nodeError",
+          pipelineId: pid,
+          nodeId: node.id,
+          status: "failed",
+          error: err.message,
+        });
 
         jobResults.push({ nodeId: node.id, jobId, status: "failed" });
         throw new Error(`Pipeline failed at node ${node.id}: ${err.message}`);
@@ -343,7 +369,7 @@ export async function executePipeline(
         status: "queued",
         progress: 0,
         inputFiles: JSON.stringify(inputFilePaths),
-        pipelineId,
+        pipelineId: pid,
         nodeId: node.id,
       })
       .run();
@@ -406,6 +432,14 @@ export async function executePipeline(
         .run();
 
       jobResults.push({ nodeId: node.id, jobId, status: "completed", outputFile: fileId, cachePath: outputPath });
+
+      emitPipelineEvent({
+        type: "nodeComplete",
+        pipelineId: pid,
+        nodeId: node.id,
+        status: "completed",
+        outputFile: fileId,
+      });
     } catch (err: any) {
       db.update(jobs)
         .set({
@@ -416,10 +450,18 @@ export async function executePipeline(
         .where(eq(jobs.id, jobId))
         .run();
 
+      emitPipelineEvent({
+        type: "nodeError",
+        pipelineId: pid,
+        nodeId: node.id,
+        status: "failed",
+        error: err.message,
+      });
+
       jobResults.push({ nodeId: node.id, jobId, status: "failed" });
       throw new Error(`Pipeline failed at node ${node.id}: ${err.message}`);
     }
   }
 
-  return { pipelineId, jobs: jobResults };
+  return { pipelineId: pid, jobs: jobResults };
 }
