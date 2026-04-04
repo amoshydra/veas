@@ -380,12 +380,15 @@ function FlowContent({ sessionId, files, onFileUpload, storeNodes, storeEdges }:
     () => {
       const resolveFileId = (nodeId: string): string | undefined => {
         const node = storeNodes.find(n => n.id === nodeId);
-        if (!node || node.type === 'fileInput') return node?.data?.config?.fileId;
-        if (node.data?.outputId) return node.data.outputId;
-        if (node.data?.config?.fileId) return node.data.config.fileId;
+        if (!node) return undefined;
+        if (node.type === 'fileInput') return node.data?.config?.fileId;
         const inputEdge = storeEdges.find(e => e.target === nodeId && e.targetHandle === 'video');
-        if (inputEdge) return resolveFileId(inputEdge.source);
-        return undefined;
+        if (inputEdge) {
+          const sourceNode = storeNodes.find(n => n.id === inputEdge.source);
+          if (sourceNode?.data?.outputId) return sourceNode.data.outputId;
+          return resolveFileId(inputEdge.source);
+        }
+        return node.data?.config?.fileId;
       };
 
       return storeNodes.map((n) => {
