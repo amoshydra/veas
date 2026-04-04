@@ -83,13 +83,22 @@ filesRoute.get("/:id", (c) => {
 
   if (!existsSync(file.path)) return c.json({ error: "File not found on disk" }, 404);
 
-  const fileSize = statSync(file.path).size;
+  let fileSize: number;
+  try {
+    fileSize = statSync(file.path).size;
+  } catch {
+    return c.json({ error: "File not found on disk" }, 404);
+  }
   const contentType = file.mimeType || "application/octet-stream";
   const range = c.req.header("range");
 
   // No range request — serve full file with range support advertised
   if (!range) {
-    return new Response(createReadStream(file.path) as any, {
+    const stream = createReadStream(file.path);
+    stream.on("error", () => {
+      return c.json({ error: "File read error" }, 500);
+    });
+    return new Response(stream as any, {
       headers: {
         "Content-Type": contentType,
         "Content-Length": String(fileSize),
@@ -124,7 +133,11 @@ filesRoute.get("/:id", (c) => {
 
   const chunkSize = end - start + 1;
 
-  return new Response(createReadStream(file.path, { start, end }) as any, {
+  const stream = createReadStream(file.path, { start, end });
+  stream.on("error", () => {
+    return c.json({ error: "File read error" }, 500);
+  });
+  return new Response(stream as any, {
     status: 206,
     headers: {
       "Content-Range": `bytes ${start}-${end}/${fileSize}`,

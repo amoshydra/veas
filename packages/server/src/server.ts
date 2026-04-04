@@ -34,3 +34,11 @@ const port = parseInt(process.env.PORT || "3001");
 console.log(`VEAS server starting on http://localhost:${port}`);
 
 serve({ fetch: app.fetch, port });
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught exception:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
