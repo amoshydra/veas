@@ -7,6 +7,7 @@ interface RangeSliderProps {
   end: number;
   onChange: (start: number, end: number) => void;
   onSeek?: (time: number) => void;
+  onSeekEnd?: () => void;
   currentTime?: number;
   formatValue?: (value: number) => string;
 }
@@ -18,6 +19,7 @@ export function RangeSlider({
   end,
   onChange,
   onSeek,
+  onSeekEnd,
   currentTime,
   formatValue,
 }: RangeSliderProps) {
@@ -83,7 +85,13 @@ export function RangeSlider({
       }
     };
 
-    const handleUp = () => setDragging(null);
+    const handleUp = () => {
+      const wasDragging = dragging;
+      setDragging(null);
+      if (wasDragging === 'seek' && onSeekEnd) {
+        onSeekEnd();
+      }
+    };
 
     window.addEventListener('pointermove', handleMove);
     window.addEventListener('pointerup', handleUp);
@@ -91,7 +99,7 @@ export function RangeSlider({
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
-  }, [dragging, min, max, start, end, onChange, onSeek, pxToValue]);
+  }, [dragging, min, max, start, end, onChange, onSeek, onSeekEnd, pxToValue]);
 
   const startPct = ((start - min) / (max - min)) * 100;
   const endPct = ((end - min) / (max - min)) * 100;

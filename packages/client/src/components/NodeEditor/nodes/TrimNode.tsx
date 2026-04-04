@@ -29,6 +29,8 @@ export function TrimNode({ id, data, selected }: NodeProps) {
   const [duration, setDuration] = useState(0);
   const [frameDuration, setFrameDuration] = useState(1 / 30);
   const [loopEnabled, setLoopEnabled] = useState(true);
+  const [isDraggingSeek, setIsDraggingSeek] = useState(false);
+  const [dragTime, setDragTime] = useState<number | null>(null);
   const frameCountRef = useRef(0);
   const lastMediaTimeRef = useRef(0);
   const loopCheckActive = useRef(false);
@@ -119,6 +121,13 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     setIsPlaying(false);
     video.currentTime = time;
     setCurrentTime(time);
+    setDragTime(time);
+    setIsDraggingSeek(true);
+  }, []);
+
+  const handleSeekEnd = useCallback(() => {
+    setIsDraggingSeek(false);
+    setDragTime(null);
   }, []);
 
   const handleRangeChange = useCallback((newStart: number, newEnd: number) => {
@@ -296,7 +305,7 @@ export function TrimNode({ id, data, selected }: NodeProps) {
           />
 
           <div className="text-center text-[10px] text-slate-400 font-mono">
-            {formatTime(currentTime)} / {formatTime(duration)}
+            {formatTime(dragTime ?? currentTime)} / {formatTime(duration)}
           </div>
 
           <RangeSlider
@@ -306,7 +315,8 @@ export function TrimNode({ id, data, selected }: NodeProps) {
             end={end}
             onChange={handleRangeChange}
             onSeek={handleSeek}
-            currentTime={currentTime}
+            onSeekEnd={handleSeekEnd}
+            currentTime={dragTime ?? currentTime}
             formatValue={formatTime}
           />
 
