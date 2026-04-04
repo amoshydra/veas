@@ -50,11 +50,17 @@ export default function NodePalette() {
                   .map((def) => (
                     <button
                       key={def.type}
-                      onClick={() => handleAddNode(def.type)}
-                      className="w-full px-2 py-1.5 text-left text-sm text-slate-300 hover:bg-slate-700 rounded flex items-center gap-2 transition-colors"
+                      onClick={() => def.implemented && handleAddNode(def.type)}
+                      disabled={!def.implemented}
+                      className={`w-full px-2 py-1.5 text-left text-sm rounded flex items-center gap-2 transition-colors ${
+                        def.implemented
+                          ? 'text-slate-300 hover:bg-slate-700'
+                          : 'text-slate-500 cursor-not-allowed opacity-50'
+                      }`}
                     >
                       <span>{def.icon}</span>
                       <span>{def.label}</span>
+                      {!def.implemented && <span className="text-[10px] text-slate-600 ml-auto">soon</span>}
                     </button>
                   ))}
               </div>

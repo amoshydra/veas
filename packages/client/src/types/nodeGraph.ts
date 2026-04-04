@@ -58,6 +58,7 @@ export interface NodeDefinition {
   inputs: PortDefinition[];
   outputs: PortDefinition[];
   defaultConfig: Record<string, any>;
+  implemented?: boolean;
 }
 
 export interface PortDefinition {
@@ -85,6 +86,7 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     inputs: [],
     outputs: [{ id: 'video', type: 'video', label: 'Video' }],
     defaultConfig: { fileId: '' },
+    implemented: true,
   },
   fileOutput: {
     type: 'fileOutput',
@@ -94,6 +96,7 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     inputs: [{ id: 'video', type: 'video', label: 'Video' }],
     outputs: [],
     defaultConfig: { format: 'mp4', quality: 23 },
+    implemented: true,
   },
   trim: {
     type: 'trim',
@@ -103,6 +106,7 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     inputs: [{ id: 'video', type: 'video', label: 'Video' }],
     outputs: [{ id: 'video', type: 'video', label: 'Video' }],
     defaultConfig: { start: 0, end: 10 },
+    implemented: true,
   },
   crop: {
     type: 'crop',
@@ -112,6 +116,7 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     inputs: [{ id: 'video', type: 'video', label: 'Video' }],
     outputs: [{ id: 'video', type: 'video', label: 'Video' }],
     defaultConfig: { x: 0, y: 0, width: 1280, height: 720 },
+    implemented: true,
   },
   resize: {
     type: 'resize',
@@ -121,6 +126,7 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     inputs: [{ id: 'video', type: 'video', label: 'Video' }],
     outputs: [{ id: 'video', type: 'video', label: 'Video' }],
     defaultConfig: { width: 1280, height: 720 },
+    implemented: true,
   },
   transcode: {
     type: 'transcode',
@@ -130,6 +136,7 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     inputs: [{ id: 'video', type: 'video', label: 'Video' }],
     outputs: [{ id: 'video', type: 'video', label: 'Video' }],
     defaultConfig: { codec: 'libx264', crf: 23, preset: 'medium' },
+    implemented: true,
   },
   filter: {
     type: 'filter',
