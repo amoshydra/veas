@@ -1,11 +1,6 @@
 import { create } from 'zustand';
-import type {
-  NodeType,
-  NodeDefinition,
-  NodeCategory,
-} from '../types/nodeGraph.js';
+import type { NodeType, NodeDefinition } from '../types/nodeGraph.js';
 
-// React Flow node/edge types
 export interface GraphNode {
   id: string;
   type: NodeType;
@@ -41,6 +36,7 @@ interface NodeGraphState {
   isPropsOpen: boolean;
   executionId: string | null;
   pipelineProgress: Record<string, { status: string; progress: number }>;
+  autoSave: () => void;
 
   setSessionId: (id: string) => void;
   addNode: (node: GraphNode) => void;
@@ -62,160 +58,194 @@ interface NodeGraphState {
   setEdges: (edges: GraphEdge[]) => void;
 }
 
-export const useNodeGraphStore = create<NodeGraphState>((set) => ({
-  sessionId: null,
-  nodes: [],
-  edges: [],
-  selectedNodeId: null,
-  selectedEdgeId: null,
-  isPaletteOpen: true,
-  isPropsOpen: true,
-  executionId: null,
-  pipelineProgress: {},
-
-  setSessionId: (id) => set({ sessionId: id }),
-
-  addNode: (node) =>
-    set((state) => ({
-      nodes: [...state.nodes, node],
-      selectedNodeId: node.id,
-    })),
-
-  removeNode: (id) =>
-    set((state) => ({
-      nodes: state.nodes.filter((n) => n.id !== id),
-      edges: state.edges.filter((e) => e.source !== id && e.target !== id),
-      selectedNodeId:
-        state.selectedNodeId === id ? null : state.selectedNodeId,
-    })),
-
-  updateNodePosition: (id, position) =>
-    set((state) => ({
-      nodes: state.nodes.map((n) =>
-        n.id === id ? { ...n, position } : n
-      ),
-    })),
-
-  updateNodeConfig: (id, config) =>
-    set((state) => ({
-      nodes: state.nodes.map((n) =>
-        n.id === id
-          ? { ...n, data: { ...n.data, config: { ...n.data.config, ...config } } }
-          : n
-      ),
-    })),
-
-  updateNodeSize: (id, dimensions) =>
-    set((state) => ({
-      nodes: state.nodes.map((n) =>
-        n.id === id ? { ...n, width: dimensions.width, height: dimensions.height } : n
-      ),
-    })),
-
-  updateNodeStatus: (id, status, outputId?, error?, cachePath?) =>
-    set((state) => ({
-      nodes: state.nodes.map((n) =>
-        n.id === id
-          ? {
-              ...n,
-              data: {
-                ...n.data,
-                status: status as any,
-                outputId,
-                cachePath,
-                error,
-              },
-            }
-          : n
-      ),
-    })),
-
-  addEdge: (edge) =>
-    set((state) => {
-      const exists = state.edges.some(
-        (e) =>
-          e.source === edge.source &&
-          e.target === edge.target &&
-          e.sourceHandle === edge.sourceHandle &&
-          e.targetHandle === edge.targetHandle
-      );
-      if (exists) return state;
-      return {
-        edges: [...state.edges, edge],
-        selectedEdgeId: edge.id,
-      };
-    }),
-
-  removeEdge: (id) =>
-    set((state) => ({
-      edges: state.edges.filter((e) => e.id !== id),
-      selectedEdgeId:
-        state.selectedEdgeId === id ? null : state.selectedEdgeId,
-    })),
-
-  selectNode: (id) =>
-    set({
-      selectedNodeId: id,
-      selectedEdgeId: id === null ? null : undefined,
-      isPropsOpen: id !== null ? true : undefined,
-    }),
-
-  selectEdge: (id) =>
-    set({
-      selectedEdgeId: id,
-      selectedNodeId: id === null ? null : undefined,
-    }),
-
-  togglePalette: () =>
-    set((state) => ({ isPaletteOpen: !state.isPaletteOpen })),
-
-  toggleProps: () => set((state) => ({ isPropsOpen: !state.isPropsOpen })),
-
-  setExecutionId: (id) => set({ executionId: id }),
-
-  setPipelineProgress: (nodeId, progress) =>
-    set((state) => ({
-      pipelineProgress: { ...state.pipelineProgress, [nodeId]: progress },
-      nodes: state.nodes.map((n) =>
-        n.id === nodeId
-          ? {
-              ...n,
-              data: {
-                ...n.data,
-                status: progress.status as any,
-              },
-            }
-          : n
-      ),
-    })),
-
-  clearGraph: () =>
-    set({
-      nodes: [],
-      edges: [],
-      selectedNodeId: null,
-      selectedEdgeId: null,
-      executionId: null,
-      pipelineProgress: {},
-    }),
-
-  setNodes: (nodes) => {
-    const valid = (nodes as any[]).map(n => ({
+export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
+  const saveGraph = (sessionId: string | null, nodes: GraphNode[], edges: GraphEdge[]) => {
+    if (!sessionId) return;
+    const nodesToSave = (nodes as any[]).map(n => ({
       ...n,
       position: n.position || { x: 100, y: 100 },
-      data: n.data || { config: n.config || {}, status: 'idle' as const }
+      config: n.data?.config,
     }));
-    set({ nodes: valid });
-  },
-  setEdges: (edges) => {
-    const normalized = (edges as any[]).map(e => ({
+    const connectionsToSave = edges.map(e => ({
       id: e.id,
-      source: e.fromNode || e.source,
-      target: e.toNode || e.target,
-      sourceHandle: e.fromPort || e.sourceHandle,
-      targetHandle: e.toPort || e.targetHandle,
-      type: e.type || 'video',
+      fromNode: e.source,
+      fromPort: e.sourceHandle,
+      toNode: e.target,
+      toPort: e.targetHandle,
     }));
-    set({ edges: normalized });
-  },
-}));
+    fetch(`/api/pipelines/${sessionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nodes: nodesToSave, connections: connectionsToSave, viewport: '{}' })
+    });
+  };
+
+  return {
+    sessionId: null,
+    nodes: [],
+    edges: [],
+    selectedNodeId: null,
+    selectedEdgeId: null,
+    isPaletteOpen: true,
+    isPropsOpen: true,
+    executionId: null,
+    pipelineProgress: {},
+
+    setSessionId: (id) => set({ sessionId: id }),
+
+    autoSave: () => {
+      const state = get();
+      saveGraph(state.sessionId, state.nodes, state.edges);
+    },
+
+    addNode: (node) =>
+      set((state) => {
+        const newNodes = [...state.nodes, node];
+        setTimeout(() => saveGraph(state.sessionId, newNodes, state.edges), 100);
+        return { nodes: newNodes, selectedNodeId: node.id };
+      }),
+
+    removeNode: (id) =>
+      set((state) => {
+        const newNodes = state.nodes.filter((n) => n.id !== id);
+        const newEdges = state.edges.filter((e) => e.source !== id && e.target !== id);
+        setTimeout(() => saveGraph(state.sessionId, newNodes, newEdges), 100);
+        return { nodes: newNodes, edges: newEdges, selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId };
+      }),
+
+    updateNodePosition: (id, position) =>
+      set((state) => {
+        const newNodes = state.nodes.map((n) => (n.id === id ? { ...n, position } : n));
+        setTimeout(() => saveGraph(state.sessionId, newNodes, state.edges), 100);
+        return { nodes: newNodes };
+      }),
+
+    updateNodeConfig: (id, config) =>
+      set((state) => {
+        const newNodes = state.nodes.map((n) =>
+          n.id === id
+            ? { ...n, data: { ...n.data, config: { ...n.data.config, ...config } } }
+            : n
+        );
+        setTimeout(() => saveGraph(state.sessionId, newNodes, state.edges), 100);
+        return { nodes: newNodes };
+      }),
+
+    updateNodeSize: (id, dimensions) =>
+      set((state) => {
+        const newNodes = state.nodes.map((n) =>
+          n.id === id ? { ...n, width: dimensions.width, height: dimensions.height } : n
+        );
+        setTimeout(() => saveGraph(state.sessionId, newNodes, state.edges), 100);
+        return { nodes: newNodes };
+      }),
+
+    updateNodeStatus: (id, status, outputId?, error?, cachePath?) =>
+      set((state) => {
+        const newNodes = state.nodes.map((n) =>
+          n.id === id
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  status: status as any,
+                  outputId,
+                  cachePath,
+                  error,
+                },
+              }
+            : n
+        );
+        setTimeout(() => saveGraph(state.sessionId, newNodes, state.edges), 100);
+        return { nodes: newNodes };
+      }),
+
+    addEdge: (edge) =>
+      set((state) => {
+        const exists = state.edges.some(
+          (e) =>
+            e.source === edge.source &&
+            e.target === edge.target &&
+            e.sourceHandle === edge.sourceHandle &&
+            e.targetHandle === edge.targetHandle
+        );
+        if (exists) return state;
+        const newEdges = [...state.edges, edge];
+        setTimeout(() => saveGraph(state.sessionId, state.nodes, newEdges), 100);
+        return { edges: newEdges, selectedEdgeId: edge.id };
+      }),
+
+    removeEdge: (id) =>
+      set((state) => {
+        const newEdges = state.edges.filter((e) => e.id !== id);
+        setTimeout(() => saveGraph(state.sessionId, state.nodes, newEdges), 100);
+        return { edges: newEdges, selectedEdgeId: state.selectedEdgeId === id ? null : state.selectedEdgeId };
+      }),
+
+    selectNode: (id) =>
+      set({
+        selectedNodeId: id,
+        selectedEdgeId: id === null ? null : undefined,
+        isPropsOpen: id !== null ? true : undefined,
+      }),
+
+    selectEdge: (id) =>
+      set({
+        selectedEdgeId: id,
+        selectedNodeId: id === null ? null : undefined,
+      }),
+
+    togglePalette: () =>
+      set((state) => ({ isPaletteOpen: !state.isPaletteOpen })),
+
+    toggleProps: () => set((state) => ({ isPropsOpen: !state.isPropsOpen })),
+
+    setExecutionId: (id) => set({ executionId: id }),
+
+    setPipelineProgress: (nodeId, progress) =>
+      set((state) => ({
+        pipelineProgress: { ...state.pipelineProgress, [nodeId]: progress },
+        nodes: state.nodes.map((n) =>
+          n.id === nodeId
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  status: progress.status as any,
+                },
+              }
+            : n
+        ),
+      })),
+
+    clearGraph: () =>
+      set({
+        nodes: [],
+        edges: [],
+        selectedNodeId: null,
+        selectedEdgeId: null,
+        executionId: null,
+        pipelineProgress: {},
+      }),
+
+    setNodes: (nodes) => {
+      const valid = (nodes as any[]).map(n => ({
+        ...n,
+        position: n.position || { x: 100, y: 100 },
+        data: n.data || { config: n.config || {}, status: 'idle' as const }
+      }));
+      set({ nodes: valid });
+    },
+    setEdges: (edges) => {
+      const normalized = (edges as any[]).map(e => ({
+        id: e.id,
+        source: e.fromNode || e.source,
+        target: e.toNode || e.target,
+        sourceHandle: e.fromPort || e.sourceHandle,
+        targetHandle: e.toPort || e.targetHandle,
+        type: e.type || 'video',
+      }));
+      set({ edges: normalized });
+    },
+  };
+});

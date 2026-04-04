@@ -157,12 +157,6 @@ export default function NodeEditor() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleSaveGraph}
-            className="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 rounded transition-colors"
-          >
-            Save
-          </button>
           {store.nodes.length > 0 && (
             <button
               onClick={() => setDeleteConfirm('graph')}
