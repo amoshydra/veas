@@ -73,11 +73,11 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
       toNode: e.target,
       toPort: e.targetHandle,
     }));
-    fetch(`/api/pipelines/${sessionId}`, {
-      method: 'PUT',
+    fetch(`/api/pipelines/save`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nodes: nodesToSave, connections: connectionsToSave, viewport: '{}' })
-    });
+      body: JSON.stringify({ sessionId, nodes: nodesToSave, connections: connectionsToSave, viewport: '{}' })
+    }).catch(err => console.error('Auto-save failed:', err));
   };
 
   return {

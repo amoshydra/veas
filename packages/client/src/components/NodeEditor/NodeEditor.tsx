@@ -28,7 +28,6 @@ export default function NodeEditor() {
     if (sessionId) {
       store.setSessionId(sessionId);
       api.getNodeGraph(sessionId).then((graph) => {
-        console.log('[NodeEditor] connections:', JSON.stringify(graph.connections, null, 2));
         if (graph.nodes && graph.nodes.length > 0) {
           store.setNodes(graph.nodes);
           store.setEdges(graph.connections || []);
