@@ -31,8 +31,8 @@ export interface ViewportState {
 }
 
 export type NodeType =
-  | 'input'
-  | 'output'
+  | 'fileInput'
+  | 'fileOutput'
   | 'trim'
   | 'crop'
   | 'resize'
@@ -77,8 +77,8 @@ export const NODE_CATEGORIES: Record<NodeCategory, string> = {
 };
 
 export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
-  input: {
-    type: 'input',
+  fileInput: {
+    type: 'fileInput',
     label: 'Input',
     icon: '📁',
     category: 'input-output',
@@ -86,8 +86,8 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     outputs: [{ id: 'video', type: 'video', label: 'Video' }],
     defaultConfig: { fileId: '' },
   },
-  output: {
-    type: 'output',
+  fileOutput: {
+    type: 'fileOutput',
     label: 'Output',
     icon: '💾',
     category: 'input-output',

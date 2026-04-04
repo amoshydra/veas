@@ -1,6 +1,10 @@
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, NodeResizeControl } from '@xyflow/react';
 import type { NodeDefinition, PortDefinition } from '../../../types/nodeGraph.js';
 import { NODE_DEFINITIONS } from '../../../types/nodeGraph.js';
+import { useContextMenu } from './useContextMenu.js';
+import { NodeContextMenu } from './NodeContextMenu.js';
+import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
+import { ResizeHandle } from './ResizeHandle.js';
 
 interface BaseNodeProps {
   id: string;
@@ -46,21 +50,43 @@ function PortHandle({ port, type }: { port: PortDefinition; type: 'source' | 'ta
 export function BaseNode({ id, type, selected, data, onConfigChange }: BaseNodeProps) {
   const definition = NODE_DEFINITIONS[type];
   const { config, status, error } = data;
+  const store = useNodeGraphStore();
 
   const borderClass = statusColors[status] || statusColors.idle;
   const bgClass = statusBg[status] || statusBg.idle;
 
+  const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef } = useContextMenu();
+
   return (
     <div
-      className={`rounded-lg border-2 ${borderClass} ${bgClass} shadow-lg min-w-[180px] max-w-[240px] ${
+      ref={menuRef}
+      className={`rounded-lg border-2 ${borderClass} ${bgClass} shadow-lg min-w-[180px] relative ${
         selected ? 'ring-2 ring-blue-400' : ''
       }`}
+      style={{ touchAction: 'none' }}
     >
+      <ResizeHandle minWidth={180} selected={selected} />
       <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700">
         <span className="text-lg">{definition.icon}</span>
         <span className="font-semibold text-sm flex-1 truncate">
           {definition.label}
         </span>
+        <div className="relative">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleMenu(); }}
+            className="text-slate-400 hover:text-slate-200 p-1 rounded"
+            title="More options"
+          >
+            <span className="text-xs">⋮</span>
+          </button>
+          {menuOpen && (
+            <NodeContextMenu
+              nodeId={id}
+              onDelete={(nodeId) => { store.removeNode(nodeId); closeMenu(); }}
+              onClose={closeMenu}
+            />
+          )}
+        </div>
         {status === 'processing' && (
           <span className="text-xs text-blue-400 animate-pulse">●</span>
         )}
@@ -98,13 +124,13 @@ function ConfigSummary({
   config: Record<string, any>;
 }) {
   switch (type) {
-    case 'input':
+    case 'fileInput':
       return config.fileId ? (
         <span>File selected</span>
       ) : (
         <span className="text-yellow-400">Select file</span>
       );
-    case 'output':
+    case 'fileOutput':
       return (
         <span>
           {config.format || 'mp4'} · CRF {config.quality ?? 23}

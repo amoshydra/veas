@@ -1,14 +1,15 @@
-import { Handle, Position, NodeResizer } from '@xyflow/react';
+import { Handle, Position, NodeResizeControl } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import { useState } from 'react';
 import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
+import { useContextMenu } from './useContextMenu.js';
+import { NodeContextMenu } from './NodeContextMenu.js';
+import { ResizeHandle } from './ResizeHandle.js';
 
 export function OutputNode({ id, data, selected }: NodeProps) {
   const config = data.config as Record<string, any>;
   const status = data.status as string;
   const error = data.error as string | undefined;
   const outputId = data.outputId as string | undefined;
-  const [showPreview, setShowPreview] = useState(false);
   const store = useNodeGraphStore();
 
   const statusBorder =
@@ -23,19 +24,17 @@ export function OutputNode({ id, data, selected }: NodeProps) {
     store.updateNodeConfig(id, updates);
   };
 
+  const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef } = useContextMenu();
+
   return (
     <div
-      className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[220px] ${
+      ref={menuRef}
+      className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[220px] relative ${
         selected ? 'ring-2 ring-blue-400' : ''
       }`}
+      style={{ touchAction: 'none' }}
     >
-      <NodeResizer
-        minWidth={220}
-        minHeight={100}
-        isVisible={selected}
-        lineClassName="border-blue-400"
-        handleClassName="bg-blue-400 w-2 h-2"
-      />
+      <ResizeHandle minWidth={220} selected={selected} />
       <Handle
         type="target"
         position={Position.Left}
@@ -45,25 +44,42 @@ export function OutputNode({ id, data, selected }: NodeProps) {
       <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700">
         <span className="text-lg">💾</span>
         <span className="font-semibold text-sm flex-1">Output</span>
-        {hasOutput && (
+        <div className="relative">
           <button
-            onClick={(e) => { e.stopPropagation(); setShowPreview(!showPreview); }}
-            className="text-xs text-slate-400 hover:text-slate-200 px-1.5 py-0.5 rounded hover:bg-slate-700"
-            title={showPreview ? 'Hide preview' : 'Show preview'}
+            onClick={(e) => { e.stopPropagation(); toggleMenu(); }}
+            className="text-slate-400 hover:text-slate-200 p-1 rounded"
+            title="More options"
           >
-            {showPreview ? '▲' : '▼'}
+            <span className="text-xs">⋮</span>
           </button>
-        )}
+          {menuOpen && (
+            <NodeContextMenu
+              nodeId={id}
+              onDelete={(nodeId) => { store.removeNode(nodeId); closeMenu(); }}
+              onClose={closeMenu}
+            />
+          )}
+        </div>
         {status === 'completed' && <span className="text-xs text-green-400">✓</span>}
         {status === 'processing' && <span className="text-xs text-blue-400 animate-pulse">●</span>}
         {status === 'error' && <span className="text-xs text-red-400">✗</span>}
       </div>
 
+      {error && (
+        <div className="px-3 py-2 text-xs text-red-400">
+          {error}
+        </div>
+      )}
+
       <div className="nodrag cursor-default px-3 py-2 space-y-2">
-        {error ? (
-          <div className="text-red-400 text-xs truncate">{error}</div>
-        ) : hasOutput ? (
-          <div className="text-green-400 text-xs">Ready — click ▼ to preview</div>
+        {hasOutput ? (
+          <video
+            src={`/api/files/${outputId}`}
+            className="w-full rounded bg-black"
+            controls
+            playsInline
+            preload="metadata"
+          />
         ) : (
           <>
             <div className="space-y-1">
@@ -95,23 +111,9 @@ export function OutputNode({ id, data, selected }: NodeProps) {
             </div>
           </>
         )}
-      </div>
 
-      {hasOutput && showPreview && (
-        <div
-          className="px-2 pb-2"
-          onMouseDown={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <video
-            src={`/api/files/${outputId}`}
-            className="w-full rounded bg-black"
-            controls
-            playsInline
-            preload="metadata"
-            style={{ maxHeight: '150px' }}
-          />
-          <div className="mt-1 flex items-center justify-between">
+        {hasOutput && (
+          <div className="flex items-center justify-between">
             <span className="text-[10px] text-slate-500">
               {(config.format || 'mp4').toUpperCase()}
             </span>
@@ -124,8 +126,8 @@ export function OutputNode({ id, data, selected }: NodeProps) {
               Download
             </a>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

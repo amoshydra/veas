@@ -1,8 +1,11 @@
-import { Handle, Position, NodeResizer } from '@xyflow/react';
+import { Handle, Position, NodeResizeControl } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
 import { RangeSlider } from '../RangeSlider.js';
+import { useContextMenu } from './useContextMenu.js';
+import { NodeContextMenu } from './NodeContextMenu.js';
+import { ResizeHandle } from './ResizeHandle.js';
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -282,19 +285,17 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     };
   }, [showPreview]);
 
+  const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef: contextMenuRef } = useContextMenu();
+
   return (
     <div
-      className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[220px] ${
+      ref={contextMenuRef}
+      className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[220px] relative ${
         selected ? 'ring-2 ring-blue-400' : ''
       }`}
+      style={{ touchAction: 'none' }}
     >
-      <NodeResizer
-        minWidth={220}
-        minHeight={100}
-        isVisible={selected}
-        lineClassName="border-blue-400"
-        handleClassName="bg-blue-400 w-2 h-2"
-      />
+      <ResizeHandle minWidth={220} selected={selected} />
       <Handle
         type="target"
         position={Position.Left}
@@ -304,6 +305,22 @@ export function TrimNode({ id, data, selected }: NodeProps) {
       <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700">
         <span className="text-lg">✂️</span>
         <span className="font-semibold text-sm flex-1">Trim</span>
+        <div className="relative">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleMenu(); }}
+            className="text-slate-400 hover:text-slate-200 p-1 rounded"
+            title="More options"
+          >
+            <span className="text-xs">⋮</span>
+          </button>
+          {menuOpen && (
+            <NodeContextMenu
+              nodeId={id}
+              onDelete={(nodeId) => { store.removeNode(nodeId); closeMenu(); }}
+              onClose={closeMenu}
+            />
+          )}
+        </div>
         {hasFile && (
           <button
             onClick={(e) => { e.stopPropagation(); setShowPreview(!showPreview); }}
@@ -336,7 +353,6 @@ export function TrimNode({ id, data, selected }: NodeProps) {
             className="w-full rounded bg-black"
             playsInline
             preload="metadata"
-            style={{ maxHeight: '120px' }}
           />
 
           <div className="text-center text-[10px] text-slate-400 font-mono">

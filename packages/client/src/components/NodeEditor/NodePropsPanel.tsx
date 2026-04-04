@@ -51,7 +51,7 @@ export default function NodePropsPanel({ files, onFileUpload }: NodePropsPanelPr
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
-        {selectedNode.type === 'input' && (
+        {selectedNode.type === 'fileInput' && (
           <InputConfig
             fileId={selectedNode.data.config.fileId}
             files={files}
@@ -64,7 +64,7 @@ export default function NodePropsPanel({ files, onFileUpload }: NodePropsPanelPr
             onFileUpload={onFileUpload}
           />
         )}
-        {selectedNode.type === 'output' && (
+        {selectedNode.type === 'fileOutput' && (
           <OutputConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}

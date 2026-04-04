@@ -48,8 +48,8 @@ export default function NodeEditor() {
     if (!sessionId || store.nodes.length === 0) return;
 
     // Validate graph
-    const inputNodes = store.nodes.filter((n) => n.type === 'input');
-    const outputNodes = store.nodes.filter((n) => n.type === 'output');
+    const inputNodes = store.nodes.filter((n) => n.type === 'fileInput');
+    const outputNodes = store.nodes.filter((n) => n.type === 'fileOutput');
 
     if (inputNodes.length === 0) {
       setExecutionError('Add an Input node with a video file');

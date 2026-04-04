@@ -1,13 +1,14 @@
-import { Handle, Position, NodeResizer } from '@xyflow/react';
+import { Handle, Position, NodeResizeControl } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import { useState } from 'react';
 import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
+import { useContextMenu } from './useContextMenu.js';
+import { NodeContextMenu } from './NodeContextMenu.js';
+import { ResizeHandle } from './ResizeHandle.js';
 
 export function ResizeNode({ id, data, selected }: NodeProps) {
   const config = data.config as Record<string, any>;
   const status = data.status as string;
   const error = data.error as string | undefined;
-  const [showConfig, setShowConfig] = useState(false);
   const store = useNodeGraphStore();
 
   const statusBorder =
@@ -20,19 +21,17 @@ export function ResizeNode({ id, data, selected }: NodeProps) {
     store.updateNodeConfig(id, updates);
   };
 
+  const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef } = useContextMenu();
+
   return (
     <div
-      className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[200px] ${
+      ref={menuRef}
+      className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[200px] relative ${
         selected ? 'ring-2 ring-blue-400' : ''
       }`}
+      style={{ touchAction: 'none' }}
     >
-      <NodeResizer
-        minWidth={200}
-        minHeight={100}
-        isVisible={selected}
-        lineClassName="border-blue-400"
-        handleClassName="bg-blue-400 w-2 h-2"
-      />
+      <ResizeHandle minWidth={200} selected={selected} />
       <Handle
         type="target"
         position={Position.Left}
@@ -42,53 +41,36 @@ export function ResizeNode({ id, data, selected }: NodeProps) {
       <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700">
         <span className="text-lg">📐</span>
         <span className="font-semibold text-sm flex-1">Resize</span>
-        <button
-          onClick={(e) => { e.stopPropagation(); setShowConfig(!showConfig); }}
-          className="text-xs text-slate-400 hover:text-slate-200 px-1.5 py-0.5 rounded hover:bg-slate-700"
-        >
-          {showConfig ? '▲' : '▼'}
-        </button>
+        <div className="relative">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleMenu(); }}
+            className="text-slate-400 hover:text-slate-200 p-1 rounded"
+            title="More options"
+          >
+            <span className="text-xs">⋮</span>
+          </button>
+          {menuOpen && (
+            <NodeContextMenu
+              nodeId={id}
+              onDelete={(nodeId) => { store.removeNode(nodeId); closeMenu(); }}
+              onClose={closeMenu}
+            />
+          )}
+        </div>
         {status === 'completed' && <span className="text-xs text-green-400">✓</span>}
         {status === 'processing' && <span className="text-xs text-blue-400 animate-pulse">●</span>}
         {status === 'error' && <span className="text-xs text-red-400">✗</span>}
       </div>
 
-      {!showConfig && (
-        <div className="px-3 py-2 text-xs text-slate-400 cursor-default">
-          {error ? (
-            <div className="text-red-400 truncate">{error}</div>
-          ) : (
-            <span>{config.width ?? 'auto'}×{config.height ?? 'auto'}</span>
-          )}
-        </div>
-      )}
-
-      {showConfig && (
-        <div className="nodrag cursor-default px-3 py-2 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <label className="text-[10px] text-slate-500">Width</label>
-              <input
-                type="number"
-                min={1}
-                value={config.width ?? 1280}
-                onChange={(e) => updateConfig({ width: parseInt(e.target.value) || 1 })}
-                className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] text-slate-500">Height</label>
-              <input
-                type="number"
-                min={1}
-                value={config.height ?? 720}
-                onChange={(e) => updateConfig({ height: parseInt(e.target.value) || 1 })}
-                className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
-              />
-            </div>
+      <div className="nodrag cursor-default px-3 py-2 space-y-2">
+        {error ? (
+          <div className="text-red-400 text-xs truncate">{error}</div>
+        ) : (
+          <div className="text-xs text-slate-400">
+            {config.width ?? 'auto'}×{config.height ?? 'auto'}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <Handle
         type="source"

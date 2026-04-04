@@ -6,7 +6,6 @@ import {
   addEdge,
   useNodesState,
   useEdgesState,
-  NodeResizer,
   type Node,
   type Edge,
   type Connection,
@@ -14,7 +13,7 @@ import {
   type EdgeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { useNodeGraphStore, type GraphNode, type GraphEdge } from '../../stores/nodeGraph.js';
 import { NODE_DEFINITIONS } from '../../types/nodeGraph.js';
 import { InputNode } from './nodes/InputNode.js';
@@ -24,6 +23,7 @@ import { CropNode } from './nodes/CropNode.js';
 import { ResizeNode } from './nodes/ResizeNode.js';
 import { TranscodeNode } from './nodes/TranscodeNode.js';
 import { BaseNode } from './nodes/BaseNode.js';
+import { ResizeHandle } from './nodes/ResizeHandle.js';
 
 function makeBaseNodeComponent(type: keyof typeof NODE_DEFINITIONS) {
   return function GenericNode(props: any) {
@@ -31,9 +31,6 @@ function makeBaseNodeComponent(type: keyof typeof NODE_DEFINITIONS) {
     const config = props.data.config || {};
     const status = props.data.status || 'idle';
     const error = props.data.error;
-    const outputId = props.data.outputId;
-    const [showPreview, setShowPreview] = useState(false);
-    const [showConfig, setShowConfig] = useState(false);
     const store = useNodeGraphStore();
 
     const statusBorder =
@@ -43,72 +40,35 @@ function makeBaseNodeComponent(type: keyof typeof NODE_DEFINITIONS) {
       'border-slate-600';
 
     const def = NODE_DEFINITIONS[type];
-    const hasOutput = status === 'completed' && outputId;
 
     const updateConfig = (updates: Record<string, any>) => {
       store.updateNodeConfig(id, updates);
     };
 
-    const hasConfig = ['filter', 'speed', 'rotate', 'flip'].includes(type);
-
     return (
-      <div className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[200px] ${props.selected ? 'ring-2 ring-blue-400' : ''}`}>
-        <NodeResizer
-          minWidth={200}
-          minHeight={100}
-          isVisible={props.selected}
-          lineClassName="border-blue-400"
-          handleClassName="bg-blue-400 w-2 h-2"
-        />
+      <div className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[200px] relative ${props.selected ? 'ring-2 ring-blue-400' : ''}`} style={{ touchAction: 'none' }}>
+        {props.selected && (
+        <ResizeHandle minWidth={200} selected={props.selected} />
+        )}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700">
           <span className="text-lg">{def.icon}</span>
           <span className="font-semibold text-sm flex-1">{def.label}</span>
-          {hasConfig && (
-            <button
-              onClick={(e: any) => { e.stopPropagation(); setShowConfig(!showConfig); }}
-              className="text-xs text-slate-400 hover:text-slate-200 px-1.5 py-0.5 rounded hover:bg-slate-700"
-            >
-              {showConfig ? '▲' : '⚙'}
-            </button>
-          )}
-          {hasOutput && (
-            <button
-              onClick={(e: any) => { e.stopPropagation(); setShowPreview(!showPreview); }}
-              className="text-xs text-slate-400 hover:text-slate-200 px-1.5 py-0.5 rounded hover:bg-slate-700"
-              title={showPreview ? 'Hide preview' : 'Show preview'}
-            >
-              {showPreview ? '▲' : '▼'}
-            </button>
-          )}
           {status === 'completed' && <span className="text-xs text-green-400">✓</span>}
           {status === 'processing' && <span className="text-xs text-blue-400 animate-pulse">●</span>}
           {status === 'error' && <span className="text-xs text-red-400">✗</span>}
         </div>
 
-        {!showConfig && (
-          <div className="px-3 py-2 text-xs text-slate-400 cursor-default">
-            {error ? <div className="text-red-400 truncate">{error}</div> : <span>{getConfigSummary(type, config)}</span>}
+        {error && (
+          <div className="px-3 py-2 text-xs text-red-400">
+            {error}
           </div>
         )}
 
-        {showConfig && (
-          <div className="nodrag cursor-default px-3 py-2 space-y-2">
-            <InlineConfig type={type} config={config} updateConfig={updateConfig} />
+        <div className="nodrag cursor-default px-3 py-2 space-y-2">
+          <div className="text-xs text-slate-400">
+            {getConfigSummary(type, config)}
           </div>
-        )}
-
-        {hasOutput && showPreview && (
-          <div className="nodrag cursor-default px-2 pb-2">
-            <video
-              src={`/api/files/${outputId}`}
-              className="w-full rounded bg-black"
-              controls
-              playsInline
-              preload="metadata"
-              style={{ maxHeight: '150px' }}
-            />
-          </div>
-        )}
+        </div>
 
         {def.inputs.map((port) => (
           <Handle key={port.id} type="target" position={Position.Left} id={port.id}
@@ -214,8 +174,8 @@ function InlineConfig({ type, config, updateConfig }: {
 import { Handle, Position } from '@xyflow/react';
 
 const nodeTypes: NodeTypes = {
-  input: InputNode,
-  output: OutputNode,
+  fileInput: InputNode,
+  fileOutput: OutputNode,
   trim: TrimNode,
   crop: CropNode,
   resize: ResizeNode,
@@ -289,7 +249,7 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
       storeNodes.map((n) => {
         let fileId = n.data.config.fileId;
         
-        if (!fileId && n.type !== 'input') {
+        if (!fileId && n.type !== 'fileInput') {
           const inputEdge = storeEdges.find(
             (e) => e.target === n.id && e.targetHandle === 'video'
           );
