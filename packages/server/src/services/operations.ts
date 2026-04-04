@@ -93,11 +93,16 @@ export function buildFfmpegArgs(
 
     case "concat": {
       const listPath = params.listPath || "/tmp/concat.txt";
+      const filterComplex = `concat=n=${inputFiles.length}:v=1:a=1[v][a]`;
       return [
-        "-f", "concat",
-        "-safe", "0",
-        "-i", listPath,
-        "-c", "copy",
+        "-i", inputFiles[0],
+        "-i", inputFiles[1],
+        "-filter_complex", filterComplex,
+        "-map", "[v]",
+        "-map", "[a]",
+        "-c:v", "libx264",
+        "-preset", params.preset || "medium",
+        "-c:a", "aac",
       ];
     }
 
@@ -257,7 +262,8 @@ export function buildFfmpegArgs(
       ];
     }
 
-    case "output": {
+    case "output":
+    case "fileOutput": {
       const format = params.format || "mp4";
       return [
         "-i", inputFiles[0],
@@ -266,6 +272,11 @@ export function buildFfmpegArgs(
         "-preset", "medium",
         "-c:a", "aac",
       ];
+    }
+
+    case "fileInput":
+    case "input": {
+      return [];
     }
 
     default:

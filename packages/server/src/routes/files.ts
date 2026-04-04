@@ -253,4 +253,33 @@ filesRoute.delete("/:id", (c) => {
   return c.json({ ok: true });
 });
 
+const CACHE_DIR = "./data/cache";
+filesRoute.get("/cache/:sessionId/:nodeId", async (c) => {
+  const sessionId = c.req.param("sessionId");
+
+  const cacheDir = join(CACHE_DIR, sessionId);
+  if (!existsSync(cacheDir)) {
+    return c.json({ error: "Cache not found" }, 404);
+  }
+
+  const fs = await import("node:fs");
+  const files = fs.readdirSync(cacheDir);
+  const mp4Files = files.filter((f: string) => f.endsWith(".mp4"));
+
+  if (mp4Files.length === 0) {
+    return c.json({ error: "No cached files found" }, 404);
+  }
+
+  const filePath = join(cacheDir, mp4Files[0]);
+  const stat = statSync(filePath);
+
+  return new Response(createReadStream(filePath) as any, {
+    headers: {
+      "Content-Type": "video/mp4",
+      "Content-Length": String(stat.size),
+      "Accept-Ranges": "bytes",
+    },
+  });
+});
+
 export default filesRoute;

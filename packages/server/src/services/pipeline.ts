@@ -2,11 +2,15 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/index.js";
 import { jobs, files, nodeGraphs } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import { statSync, mkdirSync } from "node:fs";
-import { basename } from "node:path";
+import { statSync, mkdirSync, existsSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
+import { basename, dirname, resolve } from "node:path";
 import { runFfmpeg, generateThumbnail, ffprobe } from "./ffmpeg.js";
 import { buildFfmpegArgs } from "./operations.js";
 import { emitProgress } from "./progress.js";
+import crypto from "crypto";
+
+const CACHE_DIR = resolve(process.cwd(), "./data/cache");
+const OUTPUT_DIR = resolve(process.cwd(), "./data/output");
 
 interface PipelineNode {
   id: string;
@@ -26,6 +30,44 @@ interface ResolvedNode {
   node: PipelineNode;
   inputs: string[];
   order: number;
+}
+
+function getCacheKey(node: PipelineNode, inputFilePaths: string[]): string {
+  const hashInput = node.type + JSON.stringify(node.config) + inputFilePaths.map(p => {
+    try {
+      const stats = statSync(p);
+      return `${basename(p)}-${stats.size}-${stats.mtimeMs.toFixed(0)}`;
+    } catch {
+      return p;
+    }
+  }).join("|");
+  return crypto.createHash("md5").update(hashInput).digest("hex");
+}
+
+function getCachePath(sessionId: string, cacheKey: string): string {
+  return `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
+}
+
+function getCacheLookup(sessionId: string, cacheKey: string): { hit: boolean; path: string } {
+  const cachePath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
+  if (existsSync(cachePath)) {
+    console.log(`[CACHE] HIT: ${cachePath}`);
+    return { hit: true, path: cachePath };
+  }
+  const outputPath = `${OUTPUT_DIR}/${sessionId}/${cacheKey}.mp4`;
+  if (existsSync(outputPath)) {
+    console.log(`[OUTPUT CACHE] HIT: ${outputPath}`);
+    return { hit: true, path: outputPath };
+  }
+  console.log(`[CACHE] MISS: ${cachePath}`);
+  return { hit: false, path: cachePath };
+}
+
+function saveToCache(sessionId: string, cacheKey: string, outputPath: string): void {
+  const cachePath = getCachePath(sessionId, cacheKey);
+  mkdirSync(dirname(cachePath), { recursive: true });
+  const data = readFileSync(outputPath);
+  writeFileSync(cachePath, data);
 }
 
 function topologicalSort(
@@ -82,9 +124,8 @@ async function executeNode(
   sessionId: string,
   jobId: string
 ): Promise<string> {
-  mkdirSync(`./data/output/${sessionId}`, { recursive: true });
-
   if (node.type === "thumbnail") {
+    mkdirSync(`${OUTPUT_DIR}/${sessionId}`, { recursive: true });
     const outputPath = `./data/output/${sessionId}/${jobId}_output.jpg`;
     await generateThumbnail(
       inputFilePaths[0],
@@ -94,8 +135,47 @@ async function executeNode(
     return outputPath;
   }
 
+  if (node.type === "fileOutput") {
+    const cacheKey = getCacheKey(node, inputFilePaths);
+    const cached = getCacheLookup(sessionId, cacheKey);
+    if (cached.hit) {
+      return cached.path;
+    }
+
+    mkdirSync(`${OUTPUT_DIR}/${sessionId}`, { recursive: true });
+    const outputPath = `${OUTPUT_DIR}/${sessionId}/${cacheKey}.${params.format || "mp4"}`;
+    const args = buildFfmpegArgs(node.type, inputFilePaths, params);
+    await runFfmpeg({ jobId, args, outputPath });
+    return outputPath;
+  }
+
+  if (node.type === "concat") {
+    const cacheKey = getCacheKey(node, inputFilePaths);
+    const cached = getCacheLookup(sessionId, cacheKey);
+    if (cached.hit) {
+      return cached.path;
+    }
+
+    const outputPath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
+    const listPath = `${CACHE_DIR}/${sessionId}/${jobId}_concat_list.txt`;
+    const listContent = inputFilePaths.map(p => `file '${p}'`).join("\n");
+    writeFileSync(listPath, listContent);
+
+    const args = buildFfmpegArgs(node.type, inputFilePaths, { ...params, listPath });
+    await runFfmpeg({ jobId, args, outputPath });
+
+    unlinkSync(listPath);
+    return outputPath;
+  }
+
+  const cacheKey = getCacheKey(node, inputFilePaths);
+  const cached = getCacheLookup(sessionId, cacheKey);
+  if (cached.hit) {
+    return cached.path;
+  }
+
+  const outputPath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
   const args = buildFfmpegArgs(node.type, inputFilePaths, params);
-  const outputPath = `./data/output/${sessionId}/${jobId}_output.${params.format || "mp4"}`;
 
   await runFfmpeg({ jobId, args, outputPath });
 
@@ -110,7 +190,7 @@ export async function executePipeline(
   const pipelineId = uuidv4();
   const sortedNodes = topologicalSort(nodes, connections);
   const nodeOutputs = new Map<string, string>();
-  const jobResults: Array<{ nodeId: string; jobId: string; status: string; outputFile?: string }> = [];
+  const jobResults: Array<{ nodeId: string; jobId: string; status: string; outputFile?: string; cachePath?: string }> = [];
 
   mkdirSync(`./data/output/${sessionId}`, { recursive: true });
 
@@ -118,7 +198,7 @@ export async function executePipeline(
     const { node, inputs } = resolved;
     const jobId = uuidv4();
 
-    if (node.type === "input") {
+    if (node.type === "fileInput") {
       if (!node.config.fileId) {
         throw new Error(`Input node ${node.id} has no file selected`);
       }
@@ -149,7 +229,7 @@ export async function executePipeline(
       continue;
     }
 
-    if (node.type === "output") {
+    if (node.type === "fileOutput") {
       const inputNodeId = inputs[0];
       const inputFilePath = nodeOutputs.get(inputNodeId);
       if (!inputFilePath) {
@@ -282,49 +362,8 @@ export async function executePipeline(
         jobId
       );
 
-      const fileId = uuidv4();
-      let duration: number | null = null;
-      let width: number | null = null;
-      let height: number | null = null;
-      let size = 0;
-
-      try {
-        size = statSync(outputPath).size;
-        const probe = await ffprobe(outputPath);
-        duration = parseFloat(probe.format.duration) || null;
-        const videoStream = probe.streams.find((s: any) => s.codec_type === "video");
-        if (videoStream) {
-          width = (videoStream as any).width ?? null;
-          height = (videoStream as any).height ?? null;
-        }
-      } catch { /* non-critical */ }
-
-      db.insert(files)
-        .values({
-          id: fileId,
-          sessionId,
-          filename: basename(outputPath),
-          path: outputPath,
-          size,
-          mimeType: `video/${node.config.format || "mp4"}`,
-          duration,
-          width,
-          height,
-        })
-        .run();
-
-      db.update(jobs)
-        .set({
-          status: "completed",
-          progress: 100,
-          outputFile: fileId,
-          completedAt: new Date().toISOString(),
-        })
-        .where(eq(jobs.id, jobId))
-        .run();
-
       nodeOutputs.set(node.id, outputPath);
-      jobResults.push({ nodeId: node.id, jobId, status: "completed", outputFile: fileId });
+      jobResults.push({ nodeId: node.id, jobId, status: "completed", cachePath: outputPath });
     } catch (err: any) {
       db.update(jobs)
         .set({

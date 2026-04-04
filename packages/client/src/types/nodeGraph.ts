@@ -14,6 +14,7 @@ export interface Node {
   status: 'idle' | 'queued' | 'processing' | 'completed' | 'error';
   error?: string;
   outputId?: string;
+  cachePath?: string;
 }
 
 export interface Connection {
@@ -185,6 +186,7 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     ],
     outputs: [{ id: 'video', type: 'video', label: 'Video' }],
     defaultConfig: {},
+    implemented: true,
   },
   watermark: {
     type: 'watermark',

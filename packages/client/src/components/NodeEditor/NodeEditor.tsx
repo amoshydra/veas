@@ -55,10 +55,12 @@ export default function NodeEditor() {
       setExecutionError('Add an Input node with a video file');
       return;
     }
-    if (outputNodes.length === 0) {
-      setExecutionError('Add an Output node to save the result');
-      return;
-    }
+
+    // Output node is optional - can preview intermediate results
+    // if (outputNodes.length === 0) {
+    //   setExecutionError('Add an Output node to save the result');
+    //   return;
+    // }
 
     const missingFile = inputNodes.find((n) => !n.data.config.fileId);
     if (missingFile) {
@@ -100,7 +102,7 @@ export default function NodeEditor() {
         }
       } else {
         for (const job of result.jobs) {
-          store.updateNodeStatus(job.nodeId, job.status, job.outputFile);
+          store.updateNodeStatus(job.nodeId, job.status, job.outputFile, undefined, job.cachePath);
         }
       }
 

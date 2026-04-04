@@ -17,6 +17,7 @@ export interface GraphNode {
     status: 'idle' | 'queued' | 'processing' | 'completed' | 'error';
     error?: string;
     outputId?: string;
+    cachePath?: string;
     definition: NodeDefinition;
   };
 }
@@ -46,7 +47,7 @@ interface NodeGraphState {
   removeNode: (id: string) => void;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   updateNodeConfig: (id: string, config: Record<string, any>) => void;
-  updateNodeStatus: (id: string, status: string, outputId?: string, error?: string) => void;
+  updateNodeStatus: (id: string, status: string, outputId?: string, error?: string, cachePath?: string) => void;
   updateNodeSize: (id: string, dimensions: { width: number; height: number }) => void;
   addEdge: (edge: GraphEdge) => void;
   removeEdge: (id: string) => void;
@@ -111,7 +112,7 @@ export const useNodeGraphStore = create<NodeGraphState>((set) => ({
       ),
     })),
 
-  updateNodeStatus: (id, status, outputId, error) =>
+  updateNodeStatus: (id, status, outputId?, error?, cachePath?) =>
     set((state) => ({
       nodes: state.nodes.map((n) =>
         n.id === id
@@ -121,6 +122,7 @@ export const useNodeGraphStore = create<NodeGraphState>((set) => ({
                 ...n.data,
                 status: status as any,
                 outputId,
+                cachePath,
                 error,
               },
             }

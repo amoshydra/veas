@@ -22,6 +22,7 @@ import { TrimNode } from './nodes/TrimNode.js';
 import { CropNode } from './nodes/CropNode.js';
 import { ResizeNode } from './nodes/ResizeNode.js';
 import { TranscodeNode } from './nodes/TranscodeNode.js';
+import { ConcatNode } from './nodes/ConcatNode.js';
 import { BaseNode } from './nodes/BaseNode.js';
 import { ResizeHandle } from './nodes/ResizeHandle.js';
 
@@ -180,11 +181,11 @@ const nodeTypes: NodeTypes = {
   crop: CropNode,
   resize: ResizeNode,
   transcode: TranscodeNode,
+  concat: ConcatNode,
   filter: makeBaseNodeComponent('filter'),
   speed: makeBaseNodeComponent('speed'),
   rotate: makeBaseNodeComponent('rotate'),
   flip: makeBaseNodeComponent('flip'),
-  concat: makeBaseNodeComponent('concat'),
   watermark: makeBaseNodeComponent('watermark'),
   pip: makeBaseNodeComponent('pip'),
   audioExtract: makeBaseNodeComponent('audioExtract'),
@@ -273,6 +274,7 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
           ...(n.width && n.height ? { width: n.width, height: n.height } : {}),
           data: {
             ...n.data,
+            sessionId,
             config: {
               ...n.data.config,
               fileId,
@@ -282,7 +284,7 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
           },
         };
       }),
-    [storeNodes, storeEdges, files, onFileUpload]
+    [storeNodes, storeEdges, files, onFileUpload, sessionId]
   );
 
   const rfEdges: Edge[] = useMemo(
