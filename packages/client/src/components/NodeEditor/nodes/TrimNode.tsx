@@ -31,6 +31,7 @@ export function TrimNode({ id, data, selected }: NodeProps) {
   const [loopEnabled, setLoopEnabled] = useState(true);
   const [isDraggingSeek, setIsDraggingSeek] = useState(false);
   const [dragTime, setDragTime] = useState<number | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1.0);
   const frameCountRef = useRef(0);
   const lastMediaTimeRef = useRef(0);
   const loopCheckActive = useRef(false);
@@ -136,17 +137,51 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     updateConfig({ start: snappedStart, end: snappedEnd });
   }, [updateConfig, frameDuration]);
 
-  const handleStartInputChange = useCallback((value: string) => {
-    const time = parseTime(value);
-    const snappedTime = Math.round(time / frameDuration) * frameDuration;
-    updateConfig({ start: Math.max(0, Math.min(snappedTime, end)) });
-  }, [updateConfig, frameDuration, end]);
+  const [localStart, setLocalStart] = useState('');
+  const [localEnd, setLocalEnd] = useState('');
+  const startInputRef = useRef<HTMLInputElement>(null);
+  const endInputRef = useRef<HTMLInputElement>(null);
 
-  const handleEndInputChange = useCallback((value: string) => {
-    const time = parseTime(value);
+  useEffect(() => {
+    setLocalStart(formatTime(start));
+    setLocalEnd(formatTime(end));
+  }, [start, end]);
+
+  const handleStartBlur = useCallback(() => {
+    const time = parseTime(localStart);
     const snappedTime = Math.round(time / frameDuration) * frameDuration;
-    updateConfig({ end: Math.max(start, Math.min(snappedTime, duration || Infinity)) });
-  }, [updateConfig, frameDuration, start, duration]);
+    const validTime = Math.max(0, Math.min(snappedTime, end));
+    updateConfig({ start: validTime });
+    setLocalStart(formatTime(validTime));
+  }, [localStart, frameDuration, end, updateConfig]);
+
+  const handleEndBlur = useCallback(() => {
+    const time = parseTime(localEnd);
+    const snappedTime = Math.round(time / frameDuration) * frameDuration;
+    const validTime = Math.max(start, Math.min(snappedTime, duration || Infinity));
+    updateConfig({ end: validTime });
+    setLocalEnd(formatTime(validTime));
+  }, [localEnd, frameDuration, start, duration, updateConfig]);
+
+  const handleStartKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleStartBlur();
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setLocalStart(formatTime(start));
+      e.currentTarget.blur();
+    }
+  }, [handleStartBlur, start]);
+
+  const handleEndKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleEndBlur();
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setLocalEnd(formatTime(end));
+      e.currentTarget.blur();
+    }
+  }, [handleEndBlur, end]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -318,6 +353,8 @@ export function TrimNode({ id, data, selected }: NodeProps) {
             onSeekEnd={handleSeekEnd}
             currentTime={dragTime ?? currentTime}
             formatValue={formatTime}
+            zoomLevel={zoomLevel}
+            onZoomChange={setZoomLevel}
           />
 
           <div className="flex items-center justify-center gap-1">
@@ -381,14 +418,74 @@ export function TrimNode({ id, data, selected }: NodeProps) {
             </button>
           </div>
 
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.max(0, currentTime), end: Math.min(currentTime + 3, duration || 10) }); }}
+              className="text-[10px] px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-slate-200"
+              title="Trim 3 seconds from current position"
+            >
+              Trim 3s
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.max(0, currentTime), end: Math.min(currentTime + 5, duration || 10) }); }}
+              className="text-[10px] px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-slate-200"
+              title="Trim 5 seconds from current position"
+            >
+              Trim 5s
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.max(0, currentTime), end: Math.min(currentTime + 10, duration || 10) }); }}
+              className="text-[10px] px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-slate-200"
+              title="Trim 10 seconds from current position"
+            >
+              Trim 10s
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.max(0, start - 1) }); }}
+              className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+              title="Move start 1 second earlier"
+            >
+              A−1s
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.min(start + 1, end - 0.1) }); }}
+              className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+              title="Move start 1 second later"
+            >
+              A+1s
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); updateConfig({ end: Math.max(end - 1, start + 0.1) }); }}
+              className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+              title="Move end 1 second earlier"
+            >
+              B−1s
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); updateConfig({ end: Math.min(end + 1, duration || Infinity) }); }}
+              className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
+              title="Move end 1 second later"
+            >
+              B+1s
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <label className="text-[10px] text-slate-500">Start (A)</label>
               <input
+                ref={startInputRef}
                 type="text"
-                value={formatTime(start)}
-                onChange={(e) => handleStartInputChange(e.target.value)}
+                value={localStart}
+                onChange={(e) => { e.stopPropagation(); setLocalStart(e.target.value); }}
+                onBlur={(e) => { e.stopPropagation(); handleStartBlur(); }}
+                onKeyDown={(e) => { e.stopPropagation(); handleStartKeyDown(e); }}
                 onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 font-mono focus:border-blue-500 focus:outline-none"
                 placeholder="00:00.000"
               />
@@ -396,10 +493,15 @@ export function TrimNode({ id, data, selected }: NodeProps) {
             <div className="space-y-1">
               <label className="text-[10px] text-slate-500">End (B)</label>
               <input
+                ref={endInputRef}
                 type="text"
-                value={formatTime(end)}
-                onChange={(e) => handleEndInputChange(e.target.value)}
+                value={localEnd}
+                onChange={(e) => { e.stopPropagation(); setLocalEnd(e.target.value); }}
+                onBlur={(e) => { e.stopPropagation(); handleEndBlur(); }}
+                onKeyDown={(e) => { e.stopPropagation(); handleEndKeyDown(e); }}
                 onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 font-mono focus:border-blue-500 focus:outline-none"
                 placeholder="00:10.000"
               />
