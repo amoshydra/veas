@@ -248,7 +248,16 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
   const rfNodes: Node[] = useMemo(
     () =>
       storeNodes.map((n) => {
-        let fileId = n.data.config.fileId;
+        if (!n.data) {
+          return {
+            id: n.id,
+            type: n.type,
+            position: n.position,
+            data: { config: {} },
+          };
+        }
+
+        let fileId = n.data.config?.fileId;
         
         if (!fileId && n.type !== 'fileInput') {
           const inputEdge = storeEdges.find(

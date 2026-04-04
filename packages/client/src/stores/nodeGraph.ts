@@ -199,6 +199,23 @@ export const useNodeGraphStore = create<NodeGraphState>((set) => ({
       pipelineProgress: {},
     }),
 
-  setNodes: (nodes) => set({ nodes }),
-  setEdges: (edges) => set({ edges }),
+  setNodes: (nodes) => {
+    const valid = (nodes as any[]).map(n => ({
+      ...n,
+      position: n.position || { x: 100, y: 100 },
+      data: n.data || { config: n.config || {}, status: 'idle' as const }
+    }));
+    set({ nodes: valid });
+  },
+  setEdges: (edges) => {
+    const normalized = (edges as any[]).map(e => ({
+      id: e.id,
+      source: e.fromNode || e.source,
+      target: e.toNode || e.target,
+      sourceHandle: e.fromPort || e.sourceHandle,
+      targetHandle: e.toPort || e.targetHandle,
+      type: e.type || 'video',
+    }));
+    set({ edges: normalized });
+  },
 }));

@@ -28,11 +28,12 @@ export default function NodeEditor() {
     if (sessionId) {
       store.setSessionId(sessionId);
       api.getNodeGraph(sessionId).then((graph) => {
+        console.log('[NodeEditor] connections:', JSON.stringify(graph.connections, null, 2));
         if (graph.nodes && graph.nodes.length > 0) {
           store.setNodes(graph.nodes);
           store.setEdges(graph.connections || []);
         }
-      });
+      }).catch(err => console.error('[NodeEditor] Error loading graph:', err));
     }
   }, [sessionId]);
 
@@ -118,9 +119,22 @@ export default function NodeEditor() {
 
   const handleSaveGraph = useCallback(async () => {
     if (!sessionId) return;
+    const nodesWithPosition = (store.nodes as any[]).map(n => ({
+      ...n,
+      position: n.position || { x: 100, y: 100 },
+      config: n.data?.config || n.config,
+      data: n.data || { config: {}, status: 'idle' as const }
+    }));
+    const connectionsWithLegacy = store.edges.map(e => ({
+      id: e.id,
+      fromNode: e.source,
+      fromPort: e.sourceHandle,
+      toNode: e.target,
+      toPort: e.targetHandle,
+    }));
     await api.saveNodeGraph(sessionId, {
-      nodes: store.nodes,
-      connections: store.edges,
+      nodes: nodesWithPosition,
+      connections: connectionsWithLegacy,
       viewport: { x: 0, y: 0, zoom: 1 },
     });
   }, [sessionId, store]);
