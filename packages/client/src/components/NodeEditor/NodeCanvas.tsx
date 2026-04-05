@@ -391,7 +391,25 @@ function FlowInner({
           gap={20}
           size={1}
         />
-        <Controls className="!bg-slate-800 !border-slate-700 !shadow-lg" />
+        <Controls
+          className="!bg-slate-800 !border-slate-700 !shadow-lg"
+          showFitView={true}
+          showZoom={true}
+          showInteractive={false}
+        />
+        <style>{`
+          .react-flow__controls-button {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+          }
+          .react-flow__controls-button:hover {
+            background-color: #334155 !important;
+          }
+          .react-flow__controls-button svg {
+            fill: #e2e8f0 !important;
+          }
+        `}</style>
         <MiniMap
           nodeColor={() => "#3b82f6"}
           className="!bg-slate-800 !border-slate-700"
