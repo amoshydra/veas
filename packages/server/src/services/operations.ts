@@ -98,20 +98,30 @@ export function buildFfmpegArgs(
     }
 
     case "concat": {
-      const listPath = params.listPath || "/tmp/concat.txt";
+      const scaleFilter = "scale='min(1280,iw)':min'(720,ih)':force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1";
+      const filters: string[] = [];
+      const videoInputs: string[] = [];
+
+      for (let i = 0; i < inputFiles.length; i++) {
+        filters.push(`[${i}:v]${scaleFilter}[v${i}]`);
+        videoInputs.push(`[v${i}]`);
+      }
+
+      const concatVideoInputs = videoInputs.join("");
+      const filterComplex = `${filters.join(";")};${concatVideoInputs}concat=n=${inputFiles.length}:v=1:a=0[v]`;
       return [
-        "-f",
-        "concat",
-        "-safe",
-        "0",
-        "-i",
-        listPath,
+        ...inputFiles.flatMap((f) => ["-i", f]),
+        "-filter_complex",
+        filterComplex,
+        "-map",
+        "[v]",
         "-c:v",
         "libx264",
         "-preset",
         params.preset || "medium",
         "-c:a",
         "aac",
+        "-shortest",
       ];
     }
 

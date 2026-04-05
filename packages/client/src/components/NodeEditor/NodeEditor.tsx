@@ -85,14 +85,17 @@ export default function NodeEditor() {
         type: n.type,
         config: n.data.config,
       }));
-      const connections = store.edges.map((e, index) => ({
-        id: e.id,
-        fromNode: e.source,
-        fromPort: e.sourceHandle,
-        toNode: e.target,
-        toPort: e.targetHandle,
-        index,
-      }));
+      const connections = store.edges
+        .slice()
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+        .map((e, index) => ({
+          id: e.id,
+          fromNode: e.source,
+          fromPort: e.sourceHandle,
+          toNode: e.target,
+          toPort: e.targetHandle,
+          index,
+        }));
 
       for (const node of nodes) {
         store.updateNodeStatus(node.id, "queued");

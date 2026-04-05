@@ -24,6 +24,7 @@ export interface GraphEdge {
   sourceHandle: string;
   targetHandle: string;
   type: "video" | "audio" | "image";
+  createdAt?: number;
 }
 
 export interface NodeGraphState {
@@ -183,7 +184,8 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
             e.targetHandle === edge.targetHandle,
         );
         if (exists) return state;
-        const newEdges = [...state.edges, edge];
+        const edgeWithTimestamp = { ...edge, createdAt: Date.now() };
+        const newEdges = [...state.edges, edgeWithTimestamp];
         setTimeout(() => saveGraph(state.sessionId, state.nodes, newEdges), 100);
         return { edges: newEdges, selectedEdgeId: edge.id };
       }),

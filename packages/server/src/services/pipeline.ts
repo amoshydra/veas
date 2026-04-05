@@ -37,16 +37,7 @@ function getCacheKey(node: PipelineNode, inputFilePaths: string[]): string {
   const hashInput =
     node.type +
     JSON.stringify(node.config) +
-    inputFilePaths
-      .map((p) => {
-        try {
-          const stats = statSync(p);
-          return `${basename(p)}-${stats.size}-${stats.mtimeMs.toFixed(0)}`;
-        } catch {
-          return p;
-        }
-      })
-      .join("|");
+    inputFilePaths.join("|");
   return crypto.createHash("md5").update(hashInput).digest("hex");
 }
 
@@ -57,15 +48,12 @@ function getCachePath(sessionId: string, cacheKey: string): string {
 function getCacheLookup(sessionId: string, cacheKey: string): { hit: boolean; path: string } {
   const cachePath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
   if (existsSync(cachePath)) {
-    console.log(`[CACHE] HIT: ${cachePath}`);
     return { hit: true, path: cachePath };
   }
   const outputPath = `${OUTPUT_DIR}/${sessionId}/${cacheKey}.mp4`;
   if (existsSync(outputPath)) {
-    console.log(`[OUTPUT CACHE] HIT: ${outputPath}`);
     return { hit: true, path: outputPath };
   }
-  console.log(`[CACHE] MISS: ${cachePath}`);
   return { hit: false, path: cachePath };
 }
 
@@ -177,9 +165,13 @@ async function executeNode(
       return cached.path;
     }
 
+    mkdirSync(`${CACHE_DIR}/${sessionId}`, { recursive: true });
     const outputPath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
     const listPath = `${CACHE_DIR}/${sessionId}/${jobId}_concat_list.txt`;
-    const listContent = inputFilePaths.map((p) => `file '${p}'`).join("\n");
+    const absInputPaths = inputFilePaths.map((p) =>
+      p.startsWith("/") ? p : resolve(process.cwd(), p),
+    );
+    const listContent = absInputPaths.map((p) => `file '${p}'`).join("\n");
     writeFileSync(listPath, listContent);
 
     const args = buildFfmpegArgs(node.type, inputFilePaths, { ...params, listPath });
