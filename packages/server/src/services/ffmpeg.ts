@@ -67,6 +67,7 @@ export function runFfmpeg({ jobId, args, outputPath }: FfmpegOptions): Promise<s
     const proc = spawn("ffmpeg", fullArgs);
 
     let durationSeconds = 0;
+    let errorOutput = "";
 
     proc.stderr.on("data", (data: Buffer) => {
       const line = data.toString();
@@ -106,6 +107,10 @@ export function runFfmpeg({ jobId, args, outputPath }: FfmpegOptions): Promise<s
           size: sizeMatch ? sizeMatch[1] : undefined,
         });
       }
+
+      if (line.includes("Error") || line.includes("error") || line.includes("Invalid")) {
+        errorOutput += line;
+      }
     });
 
     proc.on("close", (code) => {
@@ -113,7 +118,24 @@ export function runFfmpeg({ jobId, args, outputPath }: FfmpegOptions): Promise<s
         emitComplete(jobId, { outputPath });
         resolve(outputPath);
       } else {
-        const msg = `ffmpeg exited with code ${code}`;
+        const ffmpegCmd = `ffmpeg ${fullArgs.join(" ")}`;
+        let msg = `ffmpeg exited with code ${code}`;
+        if (errorOutput) {
+          const errorLines = errorOutput.split("\n").filter((l) => l.trim());
+          msg += `\nFFmpeg error: ${errorLines.join("\n")}`;
+
+          if (errorOutput.includes("moov atom not found")) {
+            msg +=
+              "\n\nTip: The input file is incomplete or corrupted. This often means the source file was not fully uploaded or was interrupted.";
+          } else if (errorOutput.includes("Invalid data found when processing input")) {
+            msg +=
+              "\n\nTip: The input file format is invalid or unsupported. Check if the file is a valid media file.";
+          } else if (errorOutput.includes("Duration:")) {
+            msg +=
+              "\n\nTip: Could not detect input duration. The input file may be empty or unreadable.";
+          }
+        }
+        msg += `\nCommand: ${ffmpegCmd}`;
         emitError(jobId, msg);
         reject(new Error(msg));
       }
