@@ -4,7 +4,7 @@ import { db } from "../db/index.js";
 import { nodeGraphs, jobs } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { executePipeline } from "../services/pipeline.js";
-import { progressBus } from "../services/progress.js";
+import { progressBus, getQueuedEvents } from "../services/progress.js";
 import type { PipelineEvent } from "../services/progress.js";
 
 const pipelinesRoute = new Hono();
@@ -73,6 +73,11 @@ pipelinesRoute.get("/stream/:pipelineId", async (c) => {
         const cleanup = () => {
           progressBus.off(`pipeline:${pipelineId}`, onEvent);
         };
+
+        const queuedEvents = getQueuedEvents(pipelineId);
+        for (const event of queuedEvents) {
+          send(event.type, event);
+        }
 
         progressBus.on(`pipeline:${pipelineId}`, onEvent);
         c.req.raw.signal.addEventListener("abort", cleanup);

@@ -4,6 +4,20 @@ class ProgressEmitter extends EventEmitter {}
 
 export const progressBus = new ProgressEmitter();
 
+const pipelineEventQueues = new Map<string, PipelineEvent[]>();
+
+export function queuePipelineEvent(event: PipelineEvent) {
+  const queue = pipelineEventQueues.get(event.pipelineId) || [];
+  queue.push(event);
+  pipelineEventQueues.set(event.pipelineId, queue);
+}
+
+export function getQueuedEvents(pipelineId: string): PipelineEvent[] {
+  const queue = pipelineEventQueues.get(pipelineId) || [];
+  pipelineEventQueues.delete(pipelineId);
+  return queue;
+}
+
 export interface JobProgress {
   jobId: string;
   percent: number;
@@ -38,5 +52,6 @@ export interface PipelineEvent {
 }
 
 export function emitPipelineEvent(event: PipelineEvent) {
+  queuePipelineEvent(event);
   progressBus.emit(`pipeline:${event.pipelineId}`, event);
 }
