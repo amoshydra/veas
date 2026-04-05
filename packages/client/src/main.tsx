@@ -37,7 +37,6 @@ async function startApp() {
     },
   });
 
-  console.error("rendering");
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
