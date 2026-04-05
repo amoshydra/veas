@@ -47,8 +47,26 @@ pnpm start            # Run compiled output
 ```bash
 pnpm dev              # Vite dev server
 pnpm build            # Typecheck + production build
+pnpm build:demo       # Build with demo mode enabled (for GitHub Pages)
 pnpm preview          # Preview production build
 ```
+
+### GitHub Pages Demo Build
+
+To deploy a demo on GitHub Pages (uses mock data, no server required):
+
+```bash
+# Build with demo mode enabled
+pnpm --filter @veas/client build:demo
+
+# Or manually
+VITE_DEMO_MODE=true pnpm --filter @veas/client build
+```
+
+The demo mode is controlled by the `VITE_DEMO_MODE` build-time environment variable:
+
+- `VITE_DEMO_MODE=true` — Enables mock API (MSW), shows demo data, enables settings toggle
+- Not set or `false` — Uses real API calls to `/api` endpoints
 
 ### Testing
 

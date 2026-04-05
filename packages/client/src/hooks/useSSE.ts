@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const IS_DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
 
 interface UseSSEOptions {
   onMessage?: (data: unknown) => void;
@@ -22,7 +24,6 @@ export function useSSE(jobId: string | null, options: UseSSEOptions = {}) {
 
   const optionsRef = useRef(options);
 
-  // Keep options ref updated
   useEffect(() => {
     optionsRef.current = options;
   }, [options]);
@@ -36,45 +37,63 @@ export function useSSE(jobId: string | null, options: UseSSEOptions = {}) {
     }
 
     setStatus("connecting");
-    const es = new EventSource(`/api/jobs/${jobId}/stream`);
-    esRef.current = es;
 
-    es.addEventListener("status", (e) => {
-      const data = JSON.parse(e.data);
-      setStatus(data.status);
-      setProgress(data.progress || 0);
-    });
-
-    es.addEventListener("progress", (e) => {
-      const data = JSON.parse(e.data);
-      setProgress(data.percent || 0);
-      optionsRef.current.onMessage?.(data);
-    });
-
-    es.addEventListener("complete", (e) => {
-      const data = JSON.parse(e.data);
-      setStatus("completed");
-      setProgress(100);
-      setResult(data);
-      optionsRef.current.onComplete?.(data);
-      cleanup();
-    });
-
-    es.addEventListener("error", (e: MessageEvent) => {
-      try {
-        const data = JSON.parse(e.data);
-        setError(data.error);
-      } catch {
-        setError("Connection error");
+    async function setup() {
+      if (IS_DEMO_MODE) {
+        const mod = await import("@veas/mock");
+        if (mod.getApiMode() === "mock") {
+          const mockEs = await mod.createMockEventSource(`/api/jobs/${jobId}/stream`);
+          setupEventSource(mockEs as unknown as EventSource);
+          return;
+        }
       }
-      setStatus("failed");
-      optionsRef.current.onError?.(e.data);
-      cleanup();
-    });
 
-    es.onerror = () => {
-      // SSE auto-reconnects, no action needed
-    };
+      const es = new EventSource(`/api/jobs/${jobId}/stream`);
+      setupEventSource(es);
+    }
+
+    setup();
+
+    function setupEventSource(es: EventSource) {
+      esRef.current = es;
+
+      es.addEventListener("status", (e) => {
+        const data = JSON.parse((e as MessageEvent).data);
+        setStatus(data.status);
+        setProgress(data.progress || 0);
+      });
+
+      es.addEventListener("progress", (e) => {
+        const data = JSON.parse((e as MessageEvent).data);
+        setProgress(data.percent || 0);
+        optionsRef.current.onMessage?.(data);
+      });
+
+      es.addEventListener("complete", (e) => {
+        const data = JSON.parse((e as MessageEvent).data);
+        setStatus("completed");
+        setProgress(100);
+        setResult(data);
+        optionsRef.current.onComplete?.(data);
+        cleanup();
+      });
+
+      es.addEventListener("error", (e: MessageEvent) => {
+        try {
+          const data = JSON.parse(e.data);
+          setError(data.error);
+        } catch {
+          setError("Connection error");
+        }
+        setStatus("failed");
+        optionsRef.current.onError?.(e.data);
+        cleanup();
+      });
+
+      es.onerror = () => {
+        // SSE auto-reconnects, no action needed
+      };
+    }
 
     return cleanup;
   }, [jobId, cleanup]);

@@ -1,113 +1,167 @@
-const API_BASE = "/api";
-
-const ownerId = (() => {
+const getOwnerId = () => {
   let id = localStorage.getItem("veas_owner_id");
   if (!id) {
     id = crypto.randomUUID();
     localStorage.setItem("veas_owner_id", id);
   }
   return id;
-})();
-
-const headers = {
-  "x-owner-id": ownerId,
-  "Content-Type": "application/json",
 };
 
-export const api = {
-  // Sessions
-  listSessions: () => fetch(`${API_BASE}/sessions?ownerId=${ownerId}`).then((r) => r.json()),
+const getHeaders = () => ({
+  "x-owner-id": getOwnerId(),
+  "Content-Type": "application/json",
+});
 
-  createSession: (data: { name?: string }) =>
-    fetch(`${API_BASE}/sessions`, {
+let _baseUrl: string = "/api";
+
+function getApiBase() {
+  return localStorage.getItem("veas_server_url") || "/api";
+}
+
+export class RealApiClient {
+  constructor(baseUrl?: string) {
+    _baseUrl = baseUrl || getApiBase() || "/api";
+  }
+
+  get baseUrl() {
+    return _baseUrl;
+  }
+
+  async listSessions() {
+    const ownerId = getOwnerId();
+    const res = await fetch(`${_baseUrl}/sessions?ownerId=${ownerId}`);
+    return res.json();
+  }
+
+  async createSession(data: { name?: string }) {
+    const ownerId = getOwnerId();
+    const res = await fetch(`${_baseUrl}/sessions`, {
       method: "POST",
-      headers,
+      headers: getHeaders(),
       body: JSON.stringify({ ...data, ownerId }),
-    }).then((r) => r.json()),
+    });
+    return res.json();
+  }
 
-  getSession: (id: string) =>
-    fetch(`${API_BASE}/sessions/${id}`, { headers }).then((r) => r.json()),
+  async getSession(id: string) {
+    const res = await fetch(`${_baseUrl}/sessions/${id}`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  }
 
-  updateSession: (id: string, data: Record<string, unknown>) =>
-    fetch(`${API_BASE}/sessions/${id}`, {
+  async updateSession(id: string, data: Record<string, unknown>) {
+    const res = await fetch(`${_baseUrl}/sessions/${id}`, {
       method: "PUT",
-      headers,
+      headers: getHeaders(),
       body: JSON.stringify(data),
-    }).then((r) => r.json()),
+    });
+    return res.json();
+  }
 
-  deleteSession: (id: string) =>
-    fetch(`${API_BASE}/sessions/${id}`, {
+  async deleteSession(id: string) {
+    const res = await fetch(`${_baseUrl}/sessions/${id}`, {
       method: "DELETE",
-      headers,
-    }).then((r) => r.json()),
+      headers: getHeaders(),
+    });
+    return res.json();
+  }
 
-  getSessionSummary: (id: string) =>
-    fetch(`${API_BASE}/sessions/${id}/summary`, { headers }).then((r) => r.json()),
+  async getSessionSummary(id: string) {
+    const res = await fetch(`${_baseUrl}/sessions/${id}/summary`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  }
 
-  // Files
-  uploadFile: (sessionId: string, file: File) => {
+  async uploadFile(sessionId: string, file: File) {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("sessionId", sessionId);
-    return fetch(`${API_BASE}/files/upload`, {
+    const res = await fetch(`${_baseUrl}/files/upload`, {
       method: "POST",
       body: formData,
-    }).then((r) => r.json());
-  },
+    });
+    return res.json();
+  }
 
-  listFiles: (sessionId: string) =>
-    fetch(`${API_BASE}/files?sessionId=${sessionId}`, { headers }).then((r) => r.json()),
+  async listFiles(sessionId: string) {
+    const res = await fetch(`${_baseUrl}/files?sessionId=${sessionId}`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  }
 
-  getFileProbe: (fileId: string) =>
-    fetch(`${API_BASE}/files/${fileId}/probe`, { headers }).then((r) => r.json()),
+  async getFileProbe(fileId: string) {
+    const res = await fetch(`${_baseUrl}/files/${fileId}/probe`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  }
 
-  deleteFile: (fileId: string) =>
-    fetch(`${API_BASE}/files/${fileId}`, {
+  async deleteFile(fileId: string) {
+    const res = await fetch(`${_baseUrl}/files/${fileId}`, {
       method: "DELETE",
-      headers,
-    }).then((r) => r.json()),
+      headers: getHeaders(),
+    });
+    return res.json();
+  }
 
-  getFileSprite: (fileId: string) =>
-    fetch(`${API_BASE}/files/${fileId}/sprite`, { headers }).then((r) => r.json()),
+  async getFileSprite(fileId: string) {
+    const res = await fetch(`${_baseUrl}/files/${fileId}/sprite`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  }
 
-  // Jobs
-  listJobs: (sessionId: string) =>
-    fetch(`${API_BASE}/jobs?sessionId=${sessionId}`, { headers }).then((r) => r.json()),
+  async listJobs(sessionId: string) {
+    const res = await fetch(`${_baseUrl}/jobs?sessionId=${sessionId}`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  }
 
-  createJob: (data: {
+  async createJob(data: {
     sessionId: string;
     operation: string;
     inputFiles: string[];
     params: Record<string, unknown>;
-  }) =>
-    fetch(`${API_BASE}/jobs`, {
+  }) {
+    const res = await fetch(`${_baseUrl}/jobs`, {
       method: "POST",
-      headers,
+      headers: getHeaders(),
       body: JSON.stringify(data),
-    }).then((r) => r.json()),
+    });
+    return res.json();
+  }
 
-  // Operations
-  runOperation: (
+  async runOperation(
     operation: string,
     data: {
       sessionId: string;
       inputFiles: string[];
       params: Record<string, unknown>;
     },
-  ) =>
-    fetch(`${API_BASE}/operations/${operation}`, {
+  ) {
+    const res = await fetch(`${_baseUrl}/operations/${operation}`, {
       method: "POST",
-      headers,
+      headers: getHeaders(),
       body: JSON.stringify(data),
-    }).then((r) => r.json()),
+    });
+    return res.json();
+  }
 
-  // SSE
-  subscribeToJob: (jobId: string) => new EventSource(`${API_BASE}/jobs/${jobId}/stream`),
+  subscribeToJob(jobId: string) {
+    return new EventSource(`${_baseUrl}/jobs/${jobId}/stream`);
+  }
 
-  // Pipelines
-  executePipeline: (
+  subscribeToPipeline(pipelineId: string) {
+    return new EventSource(`${_baseUrl}/pipelines/stream/${pipelineId}`);
+  }
+
+  async executePipeline(
     sessionId: string,
-    nodes: Array<{ id: string; type: string; config: Record<string, any> }>,
+    nodes: Array<{ id: string; type: string; config: Record<string, unknown> }>,
     connections: Array<{
       id: string;
       fromNode: string;
@@ -115,28 +169,49 @@ export const api = {
       toNode: string;
       toPort: string;
     }>,
-  ) =>
-    fetch(`${API_BASE}/pipelines/execute`, {
+  ) {
+    const res = await fetch(`${_baseUrl}/pipelines/execute`, {
       method: "POST",
-      headers,
+      headers: getHeaders(),
       body: JSON.stringify({ sessionId, nodes, connections }),
-    }).then((r) => r.json()),
+    });
+    return res.json();
+  }
 
-  saveNodeGraph: (
+  async saveNodeGraph(
     sessionId: string,
     data: {
-      nodes?: any[];
-      connections?: any[];
+      nodes?: unknown[];
+      connections?: unknown[];
       viewport?: { x: number; y: number; zoom: number };
       name?: string;
     },
-  ) =>
-    fetch(`${API_BASE}/pipelines/save`, {
+  ) {
+    const res = await fetch(`${_baseUrl}/pipelines/save`, {
       method: "POST",
-      headers,
+      headers: getHeaders(),
       body: JSON.stringify({ sessionId, ...data }),
-    }).then((r) => r.json()),
+    });
+    return res.json();
+  }
 
-  getNodeGraph: (sessionId: string) =>
-    fetch(`${API_BASE}/pipelines/${sessionId}`, { headers }).then((r) => r.json()),
-};
+  async getNodeGraph(sessionId: string) {
+    const res = await fetch(`${_baseUrl}/pipelines/${sessionId}`, {
+      headers: getHeaders(),
+    });
+    return res.json();
+  }
+
+  async testConnection(serverUrl: string) {
+    try {
+      const res = await fetch(`${serverUrl}/api/health`, {
+        method: "GET",
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+export const api = new RealApiClient();

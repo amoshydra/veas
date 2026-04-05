@@ -1,0 +1,18 @@
+{
+  "name": "@veas/mock",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./handlers": "./src/handlers.ts",
+    "./sse": "./src/sse.ts",
+    "./demo-data": "./src/demo-data.ts",
+    "./storage": "./src/storage.ts"
+  },
+  "dependencies": {
+    "msw": "^2.12.14"
+  }
+}

@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 
+const IS_DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
+
 interface Session {
   id: string;
   name: string;
@@ -30,7 +32,7 @@ export default function Sessions() {
 
   const createMutation = useMutation({
     mutationFn: api.createSession,
-    onSuccess: (session) => {
+    onSuccess: (session: { id: string }) => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
       navigate(`/editor/${session.id}`);
     },
@@ -55,9 +57,18 @@ export default function Sessions() {
 
   return (
     <div className="h-full flex flex-col">
-      <header className="p-4 border-b border-slate-700">
-        <h1 className="text-2xl font-bold">VEAS</h1>
-        <p className="text-sm text-slate-400">Video Editing as a Service</p>
+      <header className="p-4 border-b border-slate-700 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">VEAS</h1>
+            <p className="text-sm text-slate-400">Video Editing as a Service</p>
+          </div>
+          {IS_DEMO_MODE && (
+            <span className="px-2 py-1 text-xs font-bold bg-amber-600 text-amber-100 rounded">
+              DEMO
+            </span>
+          )}
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto p-4">
@@ -72,7 +83,14 @@ export default function Sessions() {
         {isLoading ? (
           <p className="text-slate-400 text-center mt-8">Loading...</p>
         ) : sessions?.length === 0 ? (
-          <p className="text-slate-400 text-center mt-8">No projects yet</p>
+          <div className="text-center mt-8">
+            <p className="text-slate-400 mb-2">No projects yet</p>
+            {IS_DEMO_MODE && (
+              <p className="text-sm text-amber-500">
+                This is a demo. Upload a video in the editor to get started.
+              </p>
+            )}
+          </div>
         ) : (
           <div className="space-y-2">
             {sessions?.map((s) => (
@@ -101,7 +119,6 @@ export default function Sessions() {
         )}
       </main>
 
-      {/* Delete confirmation modal */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div

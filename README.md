@@ -35,7 +35,15 @@ A client-server video editing application that brings powerful FFmpeg operations
 
 ## Getting Started
 
-### Installation
+### Quick Demo (No Server Required)
+
+Try the demo version without running a server:
+
+**Live Demo**: https://amoshydra.github.io/veas/
+
+The demo uses MSW (Mock Service Worker) to simulate the API. You can upload your own videos and run the pipeline editor with simulated progress. No actual video processing occurs.
+
+### Local Development with Server
 
 ```bash
 # Clone the repository
@@ -66,7 +74,8 @@ pnpm dev:client    # Client on http://localhost:5173
 ### Build
 
 ```bash
-pnpm build    # Build all packages
+pnpm build             # Build all packages
+pnpm build:demo        # Build client for demo (GitHub Pages)
 ```
 
 ## Project Structure

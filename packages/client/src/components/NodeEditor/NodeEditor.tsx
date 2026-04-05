@@ -1,11 +1,12 @@
-import { useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { api } from "../../api/client.js";
 import { useNodeGraphStore } from "../../stores/nodeGraph.js";
 import NodeCanvas from "./NodeCanvas.js";
 import NodePalette from "./NodePalette.js";
-import { v4 as uuidv4 } from "uuid";
+
+const IS_DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
 
 interface FileItem {
   id: string;
@@ -29,13 +30,13 @@ export default function NodeEditor() {
       store.setSessionId(sessionId);
       api
         .getNodeGraph(sessionId)
-        .then((graph) => {
+        .then((graph: any) => {
           if (graph.nodes && graph.nodes.length > 0) {
             store.setNodes(graph.nodes);
             store.setEdges(graph.connections || []);
           }
         })
-        .catch((err) => console.error("[NodeEditor] Error loading graph:", err));
+        .catch((err: unknown) => console.error("[NodeEditor] Error loading graph:", err));
     }
   }, [sessionId]);
 
@@ -65,7 +66,7 @@ export default function NodeEditor() {
     //   return;
     // }
 
-    const missingFile = inputNodes.find((n) => !n.data.config.fileId);
+    const missingFile = inputNodes.find((n) => !n.data?.config?.fileId);
     if (missingFile) {
       setExecutionError("Select a video file in the Input node");
       return;
@@ -103,7 +104,31 @@ export default function NodeEditor() {
         setIsExecuting(false);
       } else {
         const pipelineId = result.pipelineId;
-        const eventSource = new EventSource(`/api/pipelines/stream/${pipelineId}`);
+
+        let eventSource: EventSource;
+
+        if (IS_DEMO_MODE) {
+          const mod = await import("@veas/mock");
+          if (mod.getApiMode() === "mock") {
+            const inputNode = nodes.find((n) => n.type === "fileInput");
+            const inputFileId = (inputNode?.config as Record<string, unknown>)?.fileId as
+              | string
+              | undefined;
+            mod.setMockPipelineNodes(
+              nodes.map((n) => ({ id: n.id, type: n.type, config: n.config })),
+              sessionId,
+              inputFileId,
+            );
+            eventSource = (await mod.createMockEventSource(
+              `/api/pipelines/stream/${pipelineId}`,
+            )) as unknown as EventSource;
+          } else {
+            eventSource = new EventSource(`/api/pipelines/stream/${pipelineId}`);
+          }
+        } else {
+          eventSource = new EventSource(`/api/pipelines/stream/${pipelineId}`);
+        }
+
         let completedCount = 0;
         const totalNodes = nodes.length;
 
@@ -114,7 +139,7 @@ export default function NodeEditor() {
           queryClient.invalidateQueries({ queryKey: ["jobs", sessionId] });
         };
 
-        eventSource.addEventListener("nodeComplete", (e) => {
+        eventSource.addEventListener("nodeComplete", (e: MessageEvent) => {
           const data = JSON.parse(e.data);
           store.updateNodeStatus(
             data.nodeId,
@@ -129,7 +154,7 @@ export default function NodeEditor() {
           }
         });
 
-        eventSource.addEventListener("nodeError", (e) => {
+        eventSource.addEventListener("nodeError", (e: MessageEvent) => {
           const data = JSON.parse(e.data);
           store.updateNodeStatus(data.nodeId, "error", undefined, data.error);
           setExecutionError(data.error);
