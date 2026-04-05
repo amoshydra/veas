@@ -1,6 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-rf-slate-200: oklch(0.928 0.013 255.508);
+  --color-rf-slate-600: oklch(0.446 0.043 257.281);
+  --color-rf-slate-700: oklch(0.372 0.044 257.287);
+  --color-rf-slate-800: oklch(0.279 0.041 260.031);
+}
 
 :root {
   font-family:

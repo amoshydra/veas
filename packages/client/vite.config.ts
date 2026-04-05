@@ -1,10 +1,11 @@
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const BUILD_PUBLIC_PATH = process.env.BUILD_PUBLIC_PATH || "/";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
   base: BUILD_PUBLIC_PATH,
   define: {
     "import.meta.env.BASE_URL": JSON.stringify(BUILD_PUBLIC_PATH),
