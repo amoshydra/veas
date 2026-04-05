@@ -150,9 +150,9 @@ Server route files are plural nouns; service files are singular.
 
 ### Conventions
 
+- **Git**: NEVER push to git without explicit permission. After completing significant tasks, commit locally (then ask the user to push).
 - Update `.planning/TODO.md` when completing or starting tasks
 - Follow the phase order in PLAN.md
 - Server code in `packages/server/`, Client code in `packages/client/`
 - No barrel exports (no `index.ts` re-export files)
 - No test files exist yet — this is expected, not an oversight
-- **Git**: Push commits to git without asking for permission unless the user explicitly asks to review changes first
