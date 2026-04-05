@@ -26,8 +26,10 @@ export interface FfprobeResult {
 export function ffprobe(filePath: string): Promise<FfprobeResult> {
   return new Promise((resolve, reject) => {
     const proc = spawn("ffprobe", [
-      "-v", "quiet",
-      "-print_format", "json",
+      "-v",
+      "quiet",
+      "-print_format",
+      "json",
       "-show_format",
       "-show_streams",
       filePath,
@@ -127,17 +129,21 @@ export function runFfmpeg({ jobId, args, outputPath }: FfmpegOptions): Promise<s
 export function generateThumbnail(
   inputPath: string,
   outputPath: string,
-  timestamp = "00:00:01"
+  timestamp = "00:00:01",
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const dir = dirname(outputPath);
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
     const proc = spawn("ffmpeg", [
-      "-i", inputPath,
-      "-ss", timestamp,
-      "-vframes", "1",
-      "-vf", "scale=320:-1",
+      "-i",
+      inputPath,
+      "-ss",
+      timestamp,
+      "-vframes",
+      "1",
+      "-vf",
+      "scale=320:-1",
       "-y",
       outputPath,
     ]);
@@ -165,7 +171,7 @@ export function generateSpriteSheet(
   inputPath: string,
   outputPath: string,
   duration: number,
-  options: { interval?: number; frameWidth?: number; columns?: number } = {}
+  options: { interval?: number; frameWidth?: number; columns?: number } = {},
 ): Promise<SpriteResult> {
   return new Promise((resolve, reject) => {
     const dir = dirname(outputPath);
@@ -179,10 +185,14 @@ export function generateSpriteSheet(
 
     // Generate sprite: extract 1 frame every N seconds, tile into grid
     const proc = spawn("ffmpeg", [
-      "-i", inputPath,
-      "-vf", `fps=1/${interval},scale=${frameWidth}:-1,tile=${columns}x${rows}`,
-      "-frames:v", "1",
-      "-q:v", "3",
+      "-i",
+      inputPath,
+      "-vf",
+      `fps=1/${interval},scale=${frameWidth}:-1,tile=${columns}x${rows}`,
+      "-frames:v",
+      "1",
+      "-q:v",
+      "3",
       "-y",
       outputPath,
     ]);
@@ -190,7 +200,7 @@ export function generateSpriteSheet(
     proc.on("close", (code) => {
       if (code === 0) {
         // Calculate actual frame height from aspect ratio (approximate)
-        const frameHeight = Math.round(frameWidth * 9 / 16); // assume 16:9
+        const frameHeight = Math.round((frameWidth * 9) / 16); // assume 16:9
         resolve({
           spritePath: outputPath,
           frameWidth,

@@ -1,8 +1,8 @@
-import { v4 as uuidv4 } from "uuid";
+import { and, eq } from "drizzle-orm";
 import { rmSync } from "node:fs";
+import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/index.js";
-import { sessions, files } from "../db/schema.js";
-import { eq, and } from "drizzle-orm";
+import { files, sessions } from "../db/schema.js";
 
 export function createSession(ownerId: string, name?: string) {
   const id = uuidv4();
@@ -13,7 +13,7 @@ export function createSession(ownerId: string, name?: string) {
 }
 
 export function getSessionsByOwner(ownerId: string) {
-  return db
+  return db //
     .select()
     .from(sessions)
     .where(eq(sessions.ownerId, ownerId))
@@ -28,7 +28,11 @@ export function getSession(id: string, ownerId: string) {
     .get();
 }
 
-export function updateSession(id: string, ownerId: string, data: Partial<{ name: string; state: string }>) {
+export function updateSession(
+  id: string,
+  ownerId: string,
+  data: Partial<{ name: string; state: string }>,
+) {
   const existing = getSession(id, ownerId);
   if (!existing) return null;
 
@@ -53,12 +57,18 @@ export function deleteSession(id: string, ownerId: string) {
 
   // Delete files from disk
   for (const file of sessionFiles) {
-    try { rmSync(file.path, { force: true }); } catch {}
+    try {
+      rmSync(file.path, { force: true });
+    } catch {}
   }
 
   // Remove session directories
-  try { rmSync(`./data/uploads/${id}`, { recursive: true, force: true }); } catch {}
-  try { rmSync(`./data/output/${id}`, { recursive: true, force: true }); } catch {}
+  try {
+    rmSync(`./data/uploads/${id}`, { recursive: true, force: true });
+  } catch {}
+  try {
+    rmSync(`./data/output/${id}`, { recursive: true, force: true });
+  } catch {}
 
   // Delete session row (CASCADE cleans up files + jobs DB records)
   return db

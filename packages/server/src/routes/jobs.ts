@@ -41,7 +41,11 @@ jobsRoute.get("/", (c) => {
 });
 
 jobsRoute.get("/:id", (c) => {
-  const job = db.select().from(jobs).where(eq(jobs.id, c.req.param("id"))).get();
+  const job = db
+    .select()
+    .from(jobs)
+    .where(eq(jobs.id, c.req.param("id")))
+    .get();
   if (!job) return c.json({ error: "Job not found" }, 404);
   return c.json(job);
 });
@@ -106,7 +110,7 @@ jobsRoute.get("/:id/stream", async (c) => {
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
       },
-    }
+    },
   );
 });
 

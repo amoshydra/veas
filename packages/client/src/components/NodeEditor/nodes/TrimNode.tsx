@@ -1,21 +1,21 @@
-import { Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
-import { RangeSlider } from '../RangeSlider.js';
-import { useContextMenu } from './useContextMenu.js';
-import { NodeContextMenu } from './NodeContextMenu.js';
-import { ResizeHandle } from './ResizeHandle.js';
-import { ConnectionHandle } from './ConnectionHandle.js';
+import { Position } from "@xyflow/react";
+import type { NodeProps } from "@xyflow/react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useNodeGraphStore } from "../../../stores/nodeGraph.js";
+import { RangeSlider } from "../RangeSlider.js";
+import { useContextMenu } from "./useContextMenu.js";
+import { NodeContextMenu } from "./NodeContextMenu.js";
+import { ResizeHandle } from "./ResizeHandle.js";
+import { ConnectionHandle } from "./ConnectionHandle.js";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = (seconds % 60).toFixed(3);
-  return `${String(m).padStart(2, '0')}:${s.padStart(6, '0')}`;
+  return `${String(m).padStart(2, "0")}:${s.padStart(6, "0")}`;
 }
 
 function parseTime(str: string): number {
-  const parts = str.split(':');
+  const parts = str.split(":");
   if (parts.length === 2) {
     return parseInt(parts[0]) * 60 + parseFloat(parts[1]);
   }
@@ -24,7 +24,7 @@ function parseTime(str: string): number {
 
 export function TrimNode({ id, data, selected }: NodeProps) {
   const config = (data.config || {}) as Record<string, any>;
-  const status = (data.status || 'idle') as string;
+  const status = (data.status || "idle") as string;
   const error = data.error as string | undefined;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -46,10 +46,13 @@ export function TrimNode({ id, data, selected }: NodeProps) {
   const fileId = config.fileId as string | undefined;
 
   const statusBorder =
-    status === 'completed' ? 'border-green-500' :
-    status === 'processing' ? 'border-blue-500' :
-    status === 'error' ? 'border-red-500' :
-    'border-slate-600';
+    status === "completed"
+      ? "border-green-500"
+      : status === "processing"
+        ? "border-blue-500"
+        : status === "error"
+          ? "border-red-500"
+          : "border-slate-600";
 
   const hasFile = !!fileId;
 
@@ -64,9 +67,12 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     endRef.current = end;
   }, [end]);
 
-  const updateConfig = useCallback((updates: Record<string, any>) => {
-    store.updateNodeConfig(id, updates);
-  }, [store, id]);
+  const updateConfig = useCallback(
+    (updates: Record<string, any>) => {
+      store.updateNodeConfig(id, updates);
+    },
+    [store, id],
+  );
 
   const handlePlayPause = useCallback(() => {
     const video = videoRef.current;
@@ -84,13 +90,19 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     }
   }, [isPlaying, loopEnabled]);
 
-  const stepFrame = useCallback((direction: 1 | -1) => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.pause();
-    setIsPlaying(false);
-    video.currentTime = Math.max(0, Math.min(duration, video.currentTime + frameDuration * direction));
-  }, [duration, frameDuration]);
+  const stepFrame = useCallback(
+    (direction: 1 | -1) => {
+      const video = videoRef.current;
+      if (!video) return;
+      video.pause();
+      setIsPlaying(false);
+      video.currentTime = Math.max(
+        0,
+        Math.min(duration, video.currentTime + frameDuration * direction),
+      );
+    },
+    [duration, frameDuration],
+  );
 
   const jumpToStart = useCallback(() => {
     const video = videoRef.current;
@@ -134,14 +146,17 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     setDragTime(null);
   }, []);
 
-  const handleRangeChange = useCallback((newStart: number, newEnd: number) => {
-    const snappedStart = Math.round(newStart / frameDuration) * frameDuration;
-    const snappedEnd = Math.round(newEnd / frameDuration) * frameDuration;
-    updateConfig({ start: snappedStart, end: snappedEnd });
-  }, [updateConfig, frameDuration]);
+  const handleRangeChange = useCallback(
+    (newStart: number, newEnd: number) => {
+      const snappedStart = Math.round(newStart / frameDuration) * frameDuration;
+      const snappedEnd = Math.round(newEnd / frameDuration) * frameDuration;
+      updateConfig({ start: snappedStart, end: snappedEnd });
+    },
+    [updateConfig, frameDuration],
+  );
 
-  const [localStart, setLocalStart] = useState('');
-  const [localEnd, setLocalEnd] = useState('');
+  const [localStart, setLocalStart] = useState("");
+  const [localEnd, setLocalEnd] = useState("");
   const startInputRef = useRef<HTMLInputElement>(null);
   const endInputRef = useRef<HTMLInputElement>(null);
 
@@ -166,25 +181,31 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     setLocalEnd(formatTime(validTime));
   }, [localEnd, frameDuration, start, duration, updateConfig]);
 
-  const handleStartKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleStartBlur();
-      e.currentTarget.blur();
-    } else if (e.key === 'Escape') {
-      setLocalStart(formatTime(start));
-      e.currentTarget.blur();
-    }
-  }, [handleStartBlur, start]);
+  const handleStartKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleStartBlur();
+        e.currentTarget.blur();
+      } else if (e.key === "Escape") {
+        setLocalStart(formatTime(start));
+        e.currentTarget.blur();
+      }
+    },
+    [handleStartBlur, start],
+  );
 
-  const handleEndKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleEndBlur();
-      e.currentTarget.blur();
-    } else if (e.key === 'Escape') {
-      setLocalEnd(formatTime(end));
-      e.currentTarget.blur();
-    }
-  }, [handleEndBlur, end]);
+  const handleEndKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleEndBlur();
+        e.currentTarget.blur();
+      } else if (e.key === "Escape") {
+        setLocalEnd(formatTime(end));
+        e.currentTarget.blur();
+      }
+    },
+    [handleEndBlur, end],
+  );
 
   useEffect(() => {
     const video = videoRef.current;
@@ -199,10 +220,10 @@ export function TrimNode({ id, data, selected }: NodeProps) {
       setCurrentTime(start);
     };
 
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
 
     return () => {
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
   }, [config.end, updateConfig, start]);
 
@@ -212,7 +233,7 @@ export function TrimNode({ id, data, selected }: NodeProps) {
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     const videoEl = rawVideo;
-    const hasRFBC = typeof (videoEl as any).requestVideoFrameCallback === 'function';
+    const hasRFBC = typeof (videoEl as any).requestVideoFrameCallback === "function";
     let cancelled = false;
 
     const loop = (_now: number, metadata: any) => {
@@ -242,13 +263,13 @@ export function TrimNode({ id, data, selected }: NodeProps) {
       (videoEl as any).requestVideoFrameCallback(loop);
       loopCheckActive.current = true;
     } else {
-      videoEl.addEventListener('timeupdate', onTimeUpdate);
+      videoEl.addEventListener("timeupdate", onTimeUpdate);
     }
 
     return () => {
       cancelled = true;
       loopCheckActive.current = false;
-      videoEl.removeEventListener('timeupdate', onTimeUpdate);
+      videoEl.removeEventListener("timeupdate", onTimeUpdate);
     };
   }, [loopEnabled, isPlaying]);
 
@@ -278,7 +299,7 @@ export function TrimNode({ id, data, selected }: NodeProps) {
       }
     };
 
-    if ('requestVideoFrameCallback' in video) {
+    if ("requestVideoFrameCallback" in video) {
       video.requestVideoFrameCallback(onFrame);
     }
 
@@ -287,17 +308,25 @@ export function TrimNode({ id, data, selected }: NodeProps) {
     };
   }, []);
 
-  const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef: contextMenuRef } = useContextMenu();
+  const {
+    isOpen: menuOpen,
+    toggle: toggleMenu,
+    close: closeMenu,
+    menuRef: contextMenuRef,
+  } = useContextMenu();
 
   return (
     <div
       ref={contextMenuRef}
       className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[220px] relative ${
-        selected ? 'ring-2 ring-blue-400' : ''
+        selected ? "ring-2 ring-blue-400" : ""
       }`}
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: "none" }}
     >
-      <ResizeHandle minWidth={220} selected={selected} />
+      <ResizeHandle
+        minWidth={220}
+        selected={selected}
+      />
       <ConnectionHandle
         type="target"
         position={Position.Left}
@@ -309,7 +338,10 @@ export function TrimNode({ id, data, selected }: NodeProps) {
         <span className="font-semibold text-sm flex-1">Trim</span>
         <div className="relative">
           <button
-            onClick={(e) => { e.stopPropagation(); toggleMenu(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMenu();
+            }}
             className="text-slate-400 hover:text-slate-200 p-1 rounded"
             title="More options"
           >
@@ -318,21 +350,20 @@ export function TrimNode({ id, data, selected }: NodeProps) {
           {menuOpen && (
             <NodeContextMenu
               nodeId={id}
-              onDelete={(nodeId) => { store.removeNode(nodeId); closeMenu(); }}
+              onDelete={(nodeId) => {
+                store.removeNode(nodeId);
+                closeMenu();
+              }}
               onClose={closeMenu}
             />
           )}
         </div>
-        {status === 'completed' && <span className="text-xs text-green-400">✓</span>}
-        {status === 'processing' && <span className="text-xs text-blue-400 animate-pulse">●</span>}
-        {status === 'error' && <span className="text-xs text-red-400">✗</span>}
+        {status === "completed" && <span className="text-xs text-green-400">✓</span>}
+        {status === "processing" && <span className="text-xs text-blue-400 animate-pulse">●</span>}
+        {status === "error" && <span className="text-xs text-red-400">✗</span>}
       </div>
 
-      {error && (
-        <div className="px-3 py-2 text-xs text-red-400">
-          {error}
-        </div>
-      )}
+      {error && <div className="px-3 py-2 text-xs text-red-400">{error}</div>}
 
       {!hasFile && (
         <div className="px-3 py-2 text-xs text-slate-400 cursor-default">
@@ -370,34 +401,49 @@ export function TrimNode({ id, data, selected }: NodeProps) {
 
           <div className="flex items-center justify-center gap-1">
             <button
-              onClick={(e) => { e.stopPropagation(); jumpToStart(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                jumpToStart();
+              }}
               className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
               title="Jump to A"
             >
               ⏮
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); stepFrame(-1); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                stepFrame(-1);
+              }}
               className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
               title="Previous frame"
             >
               ◀
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); handlePlayPause(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlayPause();
+              }}
               className="text-[10px] px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
             >
-              {isPlaying ? '⏸' : '▶'}
+              {isPlaying ? "⏸" : "▶"}
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); stepFrame(1); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                stepFrame(1);
+              }}
               className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
               title="Next frame"
             >
               ▶
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); jumpToEnd(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                jumpToEnd();
+              }}
               className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
               title="Jump to B"
             >
@@ -407,45 +453,72 @@ export function TrimNode({ id, data, selected }: NodeProps) {
 
           <div className="flex items-center justify-center gap-1">
             <button
-              onClick={(e) => { e.stopPropagation(); setTrimStart(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setTrimStart();
+              }}
               className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-white"
               title="Set current time as start (A)"
             >
               Set A
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); setTrimEnd(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setTrimEnd();
+              }}
               className="text-[10px] px-2 py-1 bg-blue-600 hover:bg-blue-500 rounded text-white"
               title="Set current time as end (B)"
             >
               Set B
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); setLoopEnabled(!loopEnabled); }}
-              className={`text-[10px] px-2 py-1 rounded ${loopEnabled ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-300'}`}
-              title={loopEnabled ? 'Loop ON' : 'Loop OFF'}
+              onClick={(e) => {
+                e.stopPropagation();
+                setLoopEnabled(!loopEnabled);
+              }}
+              className={`text-[10px] px-2 py-1 rounded ${loopEnabled ? "bg-green-600 text-white" : "bg-slate-700 text-slate-300"}`}
+              title={loopEnabled ? "Loop ON" : "Loop OFF"}
             >
-              🔁 {loopEnabled ? 'ON' : 'OFF'}
+              🔁 {loopEnabled ? "ON" : "OFF"}
             </button>
           </div>
 
           <div className="flex items-center justify-center gap-1">
             <button
-              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.max(0, currentTime), end: Math.min(currentTime + 3, duration || 10) }); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateConfig({
+                  start: Math.max(0, currentTime),
+                  end: Math.min(currentTime + 3, duration || 10),
+                });
+              }}
               className="text-[10px] px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-slate-200"
               title="Trim 3 seconds from current position"
             >
               Trim 3s
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.max(0, currentTime), end: Math.min(currentTime + 5, duration || 10) }); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateConfig({
+                  start: Math.max(0, currentTime),
+                  end: Math.min(currentTime + 5, duration || 10),
+                });
+              }}
               className="text-[10px] px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-slate-200"
               title="Trim 5 seconds from current position"
             >
               Trim 5s
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.max(0, currentTime), end: Math.min(currentTime + 10, duration || 10) }); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateConfig({
+                  start: Math.max(0, currentTime),
+                  end: Math.min(currentTime + 10, duration || 10),
+                });
+              }}
               className="text-[10px] px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-slate-200"
               title="Trim 10 seconds from current position"
             >
@@ -455,28 +528,40 @@ export function TrimNode({ id, data, selected }: NodeProps) {
 
           <div className="flex items-center justify-center gap-1">
             <button
-              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.max(0, start - 1) }); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateConfig({ start: Math.max(0, start - 1) });
+              }}
               className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
               title="Move start 1 second earlier"
             >
               A−1s
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); updateConfig({ start: Math.min(start + 1, end - 0.1) }); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateConfig({ start: Math.min(start + 1, end - 0.1) });
+              }}
               className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
               title="Move start 1 second later"
             >
               A+1s
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); updateConfig({ end: Math.max(end - 1, start + 0.1) }); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateConfig({ end: Math.max(end - 1, start + 0.1) });
+              }}
               className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
               title="Move end 1 second earlier"
             >
               B−1s
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); updateConfig({ end: Math.min(end + 1, duration || Infinity) }); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                updateConfig({ end: Math.min(end + 1, duration || Infinity) });
+              }}
               className="text-[10px] px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-300"
               title="Move end 1 second later"
             >
@@ -491,9 +576,18 @@ export function TrimNode({ id, data, selected }: NodeProps) {
                 ref={startInputRef}
                 type="text"
                 value={localStart}
-                onChange={(e) => { e.stopPropagation(); setLocalStart(e.target.value); }}
-                onBlur={(e) => { e.stopPropagation(); handleStartBlur(); }}
-                onKeyDown={(e) => { e.stopPropagation(); handleStartKeyDown(e); }}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setLocalStart(e.target.value);
+                }}
+                onBlur={(e) => {
+                  e.stopPropagation();
+                  handleStartBlur();
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  handleStartKeyDown(e);
+                }}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -507,9 +601,18 @@ export function TrimNode({ id, data, selected }: NodeProps) {
                 ref={endInputRef}
                 type="text"
                 value={localEnd}
-                onChange={(e) => { e.stopPropagation(); setLocalEnd(e.target.value); }}
-                onBlur={(e) => { e.stopPropagation(); handleEndBlur(); }}
-                onKeyDown={(e) => { e.stopPropagation(); handleEndKeyDown(e); }}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  setLocalEnd(e.target.value);
+                }}
+                onBlur={(e) => {
+                  e.stopPropagation();
+                  handleEndBlur();
+                }}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  handleEndKeyDown(e);
+                }}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}

@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "env": {
+    "browser": true,
+    "es2020": true,
+    "node": true
+  },
+  "plugins": ["react", "react-hooks", "typescript"],
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "warn",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+    "typescript/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
+  }
+}

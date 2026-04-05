@@ -33,14 +33,19 @@ interface ResolvedNode {
 }
 
 function getCacheKey(node: PipelineNode, inputFilePaths: string[]): string {
-  const hashInput = node.type + JSON.stringify(node.config) + inputFilePaths.map(p => {
-    try {
-      const stats = statSync(p);
-      return `${basename(p)}-${stats.size}-${stats.mtimeMs.toFixed(0)}`;
-    } catch {
-      return p;
-    }
-  }).join("|");
+  const hashInput =
+    node.type +
+    JSON.stringify(node.config) +
+    inputFilePaths
+      .map((p) => {
+        try {
+          const stats = statSync(p);
+          return `${basename(p)}-${stats.size}-${stats.mtimeMs.toFixed(0)}`;
+        } catch {
+          return p;
+        }
+      })
+      .join("|");
   return crypto.createHash("md5").update(hashInput).digest("hex");
 }
 
@@ -70,12 +75,9 @@ function saveToCache(sessionId: string, cacheKey: string, outputPath: string): v
   writeFileSync(cachePath, data);
 }
 
-function topologicalSort(
-  nodes: PipelineNode[],
-  connections: PipelineConnection[]
-): ResolvedNode[] {
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
-  const inDegree = new Map(nodes.map(n => [n.id, 0]));
+function topologicalSort(nodes: PipelineNode[], connections: PipelineConnection[]): ResolvedNode[] {
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  const inDegree = new Map(nodes.map((n) => [n.id, 0]));
   const adjacency = new Map<string, string[]>();
 
   for (const conn of connections) {
@@ -97,10 +99,10 @@ function topologicalSort(
     const node = nodeMap.get(nodeId);
     if (!node) continue;
 
-    const inputConns = connections.filter(c => c.toNode === nodeId);
+    const inputConns = connections.filter((c) => c.toNode === nodeId);
     sorted.push({
       node,
-      inputs: inputConns.map(c => c.fromNode),
+      inputs: inputConns.map((c) => c.fromNode),
       order: order++,
     });
 
@@ -122,16 +124,12 @@ async function executeNode(
   inputFilePaths: string[],
   params: Record<string, any>,
   sessionId: string,
-  jobId: string
+  jobId: string,
 ): Promise<string> {
   if (node.type === "thumbnail") {
     mkdirSync(`${OUTPUT_DIR}/${sessionId}`, { recursive: true });
     const outputPath = `./data/output/${sessionId}/${jobId}_output.jpg`;
-    await generateThumbnail(
-      inputFilePaths[0],
-      outputPath,
-      params.timestamp || "00:00:01"
-    );
+    await generateThumbnail(inputFilePaths[0], outputPath, params.timestamp || "00:00:01");
     return outputPath;
   }
 
@@ -158,7 +156,7 @@ async function executeNode(
 
     const outputPath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
     const listPath = `${CACHE_DIR}/${sessionId}/${jobId}_concat_list.txt`;
-    const listContent = inputFilePaths.map(p => `file '${p}'`).join("\n");
+    const listContent = inputFilePaths.map((p) => `file '${p}'`).join("\n");
     writeFileSync(listPath, listContent);
 
     const args = buildFfmpegArgs(node.type, inputFilePaths, { ...params, listPath });
@@ -186,12 +184,21 @@ export async function executePipeline(
   sessionId: string,
   nodes: PipelineNode[],
   connections: PipelineConnection[],
-  pipelineId?: string
-): Promise<{ pipelineId: string; jobs: Array<{ nodeId: string; jobId: string; status: string; outputFile?: string }> }> {
+  pipelineId?: string,
+): Promise<{
+  pipelineId: string;
+  jobs: Array<{ nodeId: string; jobId: string; status: string; outputFile?: string }>;
+}> {
   const pid = pipelineId || uuidv4();
   const sortedNodes = topologicalSort(nodes, connections);
   const nodeOutputs = new Map<string, string>();
-  const jobResults: Array<{ nodeId: string; jobId: string; status: string; outputFile?: string; cachePath?: string }> = [];
+  const jobResults: Array<{
+    nodeId: string;
+    jobId: string;
+    status: string;
+    outputFile?: string;
+    cachePath?: string;
+  }> = [];
 
   mkdirSync(`./data/output/${sessionId}`, { recursive: true });
 
@@ -262,18 +269,9 @@ export async function executePipeline(
         .run();
 
       try {
-        db.update(jobs)
-          .set({ status: "processing", progress: 0 })
-          .where(eq(jobs.id, jobId))
-          .run();
+        db.update(jobs).set({ status: "processing", progress: 0 }).where(eq(jobs.id, jobId)).run();
 
-        const outputPath = await executeNode(
-          node,
-          inputFilePaths,
-          node.config,
-          sessionId,
-          jobId
-        );
+        const outputPath = await executeNode(node, inputFilePaths, node.config, sessionId, jobId);
 
         const fileId = uuidv4();
         let duration: number | null = null;
@@ -290,7 +288,9 @@ export async function executePipeline(
             width = (videoStream as any).width ?? null;
             height = (videoStream as any).height ?? null;
           }
-        } catch { /* non-critical */ }
+        } catch {
+          /* non-critical */
+        }
 
         db.insert(files)
           .values({
@@ -375,18 +375,9 @@ export async function executePipeline(
       .run();
 
     try {
-      db.update(jobs)
-        .set({ status: "processing", progress: 0 })
-        .where(eq(jobs.id, jobId))
-        .run();
+      db.update(jobs).set({ status: "processing", progress: 0 }).where(eq(jobs.id, jobId)).run();
 
-      const outputPath = await executeNode(
-        node,
-        inputFilePaths,
-        node.config,
-        sessionId,
-        jobId
-      );
+      const outputPath = await executeNode(node, inputFilePaths, node.config, sessionId, jobId);
 
       nodeOutputs.set(node.id, outputPath);
 
@@ -405,7 +396,9 @@ export async function executePipeline(
           width = (videoStream as any).width ?? null;
           height = (videoStream as any).height ?? null;
         }
-      } catch { /* non-critical */ }
+      } catch {
+        /* non-critical */
+      }
 
       db.insert(files)
         .values({
@@ -431,7 +424,13 @@ export async function executePipeline(
         .where(eq(jobs.id, jobId))
         .run();
 
-      jobResults.push({ nodeId: node.id, jobId, status: "completed", outputFile: fileId, cachePath: outputPath });
+      jobResults.push({
+        nodeId: node.id,
+        jobId,
+        status: "completed",
+        outputFile: fileId,
+        cachePath: outputPath,
+      });
 
       emitPipelineEvent({
         type: "nodeComplete",

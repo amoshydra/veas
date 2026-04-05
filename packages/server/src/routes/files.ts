@@ -71,14 +71,15 @@ filesRoute.post("/upload", async (c) => {
 
   db.insert(files).values(record).run();
 
-  return c.json(
-    db.select().from(files).where(eq(files.id, id)).get(),
-    201
-  );
+  return c.json(db.select().from(files).where(eq(files.id, id)).get(), 201);
 });
 
 filesRoute.get("/:id", (c) => {
-  const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
+  const file = db
+    .select()
+    .from(files)
+    .where(eq(files.id, c.req.param("id")))
+    .get();
   if (!file) return c.json({ error: "File not found" }, 404);
 
   if (!existsSync(file.path)) return c.json({ error: "File not found on disk" }, 404);
@@ -150,7 +151,11 @@ filesRoute.get("/:id", (c) => {
 });
 
 filesRoute.get("/:id/probe", async (c) => {
-  const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
+  const file = db
+    .select()
+    .from(files)
+    .where(eq(files.id, c.req.param("id")))
+    .get();
   if (!file) return c.json({ error: "File not found" }, 404);
 
   try {
@@ -162,7 +167,11 @@ filesRoute.get("/:id/probe", async (c) => {
 });
 
 filesRoute.get("/:id/thumbnail", async (c) => {
-  const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
+  const file = db
+    .select()
+    .from(files)
+    .where(eq(files.id, c.req.param("id")))
+    .get();
   if (!file) return c.json({ error: "File not found" }, 404);
 
   const thumbPath = file.path.replace(extname(file.path), "_thumb.jpg");
@@ -187,7 +196,11 @@ filesRoute.get("/:id/thumbnail", async (c) => {
 });
 
 filesRoute.get("/:id/sprite", async (c) => {
-  const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
+  const file = db
+    .select()
+    .from(files)
+    .where(eq(files.id, c.req.param("id")))
+    .get();
   if (!file) return c.json({ error: "File not found" }, 404);
 
   const spritePath = file.path.replace(extname(file.path), "_sprite.jpg");
@@ -196,7 +209,7 @@ filesRoute.get("/:id/sprite", async (c) => {
   // Return cached sprite metadata if it exists
   if (existsSync(spritePath) && existsSync(metaPath)) {
     const meta = JSON.parse(
-      await import("node:fs").then((fs) => fs.readFileSync(metaPath, "utf-8"))
+      await import("node:fs").then((fs) => fs.readFileSync(metaPath, "utf-8")),
     );
     return c.json({ ...meta, spriteUrl: `/api/files/${file.id}/sprite.jpg` });
   }
@@ -233,7 +246,11 @@ filesRoute.get("/:id/sprite", async (c) => {
 
 // Serve sprite image (must be before /:id to avoid conflict)
 filesRoute.get("/:id/sprite.jpg", (c) => {
-  const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
+  const file = db
+    .select()
+    .from(files)
+    .where(eq(files.id, c.req.param("id")))
+    .get();
   if (!file) return c.json({ error: "File not found" }, 404);
 
   const spritePath = file.path.replace(extname(file.path), "_sprite.jpg");
@@ -250,15 +267,23 @@ filesRoute.get("/:id/sprite.jpg", (c) => {
 });
 
 filesRoute.delete("/:id", (c) => {
-  const file = db.select().from(files).where(eq(files.id, c.req.param("id"))).get();
+  const file = db
+    .select()
+    .from(files)
+    .where(eq(files.id, c.req.param("id")))
+    .get();
   if (!file) return c.json({ error: "File not found" }, 404);
 
   // Delete from disk
-  try { rmSync(file.path, { force: true }); } catch {}
+  try {
+    rmSync(file.path, { force: true });
+  } catch {}
 
   // Delete thumbnail if exists
   const thumbPath = file.path.replace(extname(file.path), "_thumb.jpg");
-  try { rmSync(thumbPath, { force: true }); } catch {}
+  try {
+    rmSync(thumbPath, { force: true });
+  } catch {}
 
   // Delete from DB
   db.delete(files).where(eq(files.id, file.id)).run();

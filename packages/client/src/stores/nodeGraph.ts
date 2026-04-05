@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import type { NodeType, NodeDefinition } from '../types/nodeGraph.js';
+import { create } from "zustand";
+import type { NodeType, NodeDefinition } from "../types/nodeGraph.js";
 
 export interface GraphNode {
   id: string;
@@ -9,7 +9,7 @@ export interface GraphNode {
   height?: number;
   data: {
     config: Record<string, any>;
-    status: 'idle' | 'queued' | 'processing' | 'completed' | 'error';
+    status: "idle" | "queued" | "processing" | "completed" | "error";
     error?: string;
     outputId?: string;
     cachePath?: string;
@@ -23,7 +23,7 @@ export interface GraphEdge {
   target: string;
   sourceHandle: string;
   targetHandle: string;
-  type: 'video' | 'audio' | 'image';
+  type: "video" | "audio" | "image";
 }
 
 export interface NodeGraphState {
@@ -43,7 +43,13 @@ export interface NodeGraphState {
   removeNode: (id: string) => void;
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   updateNodeConfig: (id: string, config: Record<string, any>) => void;
-  updateNodeStatus: (id: string, status: string, outputId?: string, error?: string, cachePath?: string) => void;
+  updateNodeStatus: (
+    id: string,
+    status: string,
+    outputId?: string,
+    error?: string,
+    cachePath?: string,
+  ) => void;
   updateNodeSize: (id: string, dimensions: { width: number; height: number }) => void;
   addEdge: (edge: GraphEdge) => void;
   removeEdge: (id: string) => void;
@@ -61,12 +67,12 @@ export interface NodeGraphState {
 export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
   const saveGraph = (sessionId: string | null, nodes: GraphNode[], edges: GraphEdge[]) => {
     if (!sessionId) return;
-    const nodesToSave = (nodes as any[]).map(n => ({
+    const nodesToSave = (nodes as any[]).map((n) => ({
       ...n,
       position: n.position || { x: 100, y: 100 },
       config: n.data?.config,
     }));
-    const connectionsToSave = edges.map(e => ({
+    const connectionsToSave = edges.map((e) => ({
       id: e.id,
       fromNode: e.source,
       fromPort: e.sourceHandle,
@@ -74,10 +80,15 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
       toPort: e.targetHandle,
     }));
     fetch(`/api/pipelines/save`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId, nodes: nodesToSave, connections: connectionsToSave, viewport: '{}' })
-    }).catch(err => console.error('Auto-save failed:', err));
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId,
+        nodes: nodesToSave,
+        connections: connectionsToSave,
+        viewport: "{}",
+      }),
+    }).catch((err) => console.error("Auto-save failed:", err));
   };
 
   return {
@@ -110,7 +121,11 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
         const newNodes = state.nodes.filter((n) => n.id !== id);
         const newEdges = state.edges.filter((e) => e.source !== id && e.target !== id);
         setTimeout(() => saveGraph(state.sessionId, newNodes, newEdges), 100);
-        return { nodes: newNodes, edges: newEdges, selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId };
+        return {
+          nodes: newNodes,
+          edges: newEdges,
+          selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
+        };
       }),
 
     updateNodePosition: (id, position) =>
@@ -123,9 +138,7 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
     updateNodeConfig: (id, config) =>
       set((state) => {
         const newNodes = state.nodes.map((n) =>
-          n.id === id
-            ? { ...n, data: { ...n.data, config: { ...n.data.config, ...config } } }
-            : n
+          n.id === id ? { ...n, data: { ...n.data, config: { ...n.data.config, ...config } } } : n,
         );
         setTimeout(() => saveGraph(state.sessionId, newNodes, state.edges), 100);
         return { nodes: newNodes };
@@ -134,7 +147,7 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
     updateNodeSize: (id, dimensions) =>
       set((state) => {
         const newNodes = state.nodes.map((n) =>
-          n.id === id ? { ...n, width: dimensions.width, height: dimensions.height } : n
+          n.id === id ? { ...n, width: dimensions.width, height: dimensions.height } : n,
         );
         setTimeout(() => saveGraph(state.sessionId, newNodes, state.edges), 100);
         return { nodes: newNodes };
@@ -154,7 +167,7 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
                   error,
                 },
               }
-            : n
+            : n,
         );
         setTimeout(() => saveGraph(state.sessionId, newNodes, state.edges), 100);
         return { nodes: newNodes };
@@ -167,7 +180,7 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
             e.source === edge.source &&
             e.target === edge.target &&
             e.sourceHandle === edge.sourceHandle &&
-            e.targetHandle === edge.targetHandle
+            e.targetHandle === edge.targetHandle,
         );
         if (exists) return state;
         const newEdges = [...state.edges, edge];
@@ -179,7 +192,10 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
       set((state) => {
         const newEdges = state.edges.filter((e) => e.id !== id);
         setTimeout(() => saveGraph(state.sessionId, state.nodes, newEdges), 100);
-        return { edges: newEdges, selectedEdgeId: state.selectedEdgeId === id ? null : state.selectedEdgeId };
+        return {
+          edges: newEdges,
+          selectedEdgeId: state.selectedEdgeId === id ? null : state.selectedEdgeId,
+        };
       }),
 
     selectNode: (id) =>
@@ -195,8 +211,7 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
         selectedNodeId: id === null ? null : undefined,
       }),
 
-    togglePalette: () =>
-      set((state) => ({ isPaletteOpen: !state.isPaletteOpen })),
+    togglePalette: () => set((state) => ({ isPaletteOpen: !state.isPaletteOpen })),
 
     toggleProps: () => set((state) => ({ isPropsOpen: !state.isPropsOpen })),
 
@@ -214,7 +229,7 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
                   status: progress.status as any,
                 },
               }
-            : n
+            : n,
         ),
       })),
 
@@ -229,21 +244,21 @@ export const useNodeGraphStore = create<NodeGraphState>((set, get) => {
       }),
 
     setNodes: (nodes) => {
-      const valid = (nodes as any[]).map(n => ({
+      const valid = (nodes as any[]).map((n) => ({
         ...n,
         position: n.position || { x: 100, y: 100 },
-        data: n.data || { config: n.config || {}, status: 'idle' as const }
+        data: n.data || { config: n.config || {}, status: "idle" as const },
       }));
       set({ nodes: valid });
     },
     setEdges: (edges) => {
-      const normalized = (edges as any[]).map(e => ({
+      const normalized = (edges as any[]).map((e) => ({
         id: e.id,
         source: e.fromNode || e.source,
         target: e.toNode || e.target,
         sourceHandle: e.fromPort || e.sourceHandle,
         targetHandle: e.toPort || e.targetHandle,
-        type: e.type || 'video',
+        type: e.type || "video",
       }));
       set({ edges: normalized });
     },

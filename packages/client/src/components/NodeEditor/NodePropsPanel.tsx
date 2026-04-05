@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNodeGraphStore } from '../../stores/nodeGraph.js';
-import { NODE_DEFINITIONS } from '../../types/nodeGraph.js';
-import type { NodeType } from '../../types/nodeGraph.js';
+import { useState, useEffect } from "react";
+import { useNodeGraphStore } from "../../stores/nodeGraph.js";
+import { NODE_DEFINITIONS } from "../../types/nodeGraph.js";
+import type { NodeType } from "../../types/nodeGraph.js";
 
 interface FileItem {
   id: string;
@@ -51,7 +51,7 @@ export default function NodePropsPanel({ files, onFileUpload }: NodePropsPanelPr
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
-        {selectedNode.type === 'fileInput' && (
+        {selectedNode.type === "fileInput" && (
           <InputConfig
             fileId={selectedNode.data.config.fileId}
             files={files}
@@ -64,77 +64,80 @@ export default function NodePropsPanel({ files, onFileUpload }: NodePropsPanelPr
             onFileUpload={onFileUpload}
           />
         )}
-        {selectedNode.type === 'fileOutput' && (
+        {selectedNode.type === "fileOutput" && (
           <OutputConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}
           />
         )}
-        {selectedNode.type === 'trim' && (
+        {selectedNode.type === "trim" && (
           <TrimConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}
           />
         )}
-        {selectedNode.type === 'crop' && (
+        {selectedNode.type === "crop" && (
           <CropConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}
           />
         )}
-        {selectedNode.type === 'resize' && (
+        {selectedNode.type === "resize" && (
           <ResizeConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}
           />
         )}
-        {selectedNode.type === 'transcode' && (
+        {selectedNode.type === "transcode" && (
           <TranscodeConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}
           />
         )}
-        {selectedNode.type === 'filter' && (
+        {selectedNode.type === "filter" && (
           <FilterConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}
           />
         )}
-        {selectedNode.type === 'speed' && (
+        {selectedNode.type === "speed" && (
           <SpeedConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}
           />
         )}
-        {selectedNode.type === 'rotate' && (
+        {selectedNode.type === "rotate" && (
           <RotateConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}
           />
         )}
-        {selectedNode.type === 'flip' && (
+        {selectedNode.type === "flip" && (
           <FlipConfig
             config={selectedNode.data.config}
             onChange={(config) => store.updateNodeConfig(selectedNode.id, config)}
           />
         )}
-        {!['input', 'output', 'trim', 'crop', 'resize', 'transcode', 'filter', 'speed', 'rotate', 'flip'].includes(selectedNode.type) && (
-          <div className="text-sm text-slate-500">
-            Properties for {def.label} coming soon
-          </div>
+        {![
+          "input",
+          "output",
+          "trim",
+          "crop",
+          "resize",
+          "transcode",
+          "filter",
+          "speed",
+          "rotate",
+          "flip",
+        ].includes(selectedNode.type) && (
+          <div className="text-sm text-slate-500">Properties for {def.label} coming soon</div>
         )}
       </div>
     </div>
   );
 }
 
-function ConfigField({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function ConfigField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
       <label className="block text-xs font-medium text-slate-400">{label}</label>
@@ -164,8 +167,11 @@ function InputConfig({
         >
           <option value="">Select a file...</option>
           {files.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.filename} {f.duration ? `(${f.duration.toFixed(1)}s)` : ''}
+            <option
+              key={f.id}
+              value={f.id}
+            >
+              {f.filename} {f.duration ? `(${f.duration.toFixed(1)}s)` : ""}
             </option>
           ))}
         </select>
@@ -203,7 +209,7 @@ function InputConfig({
             {files.find((f) => f.id === fileId)?.duration?.toFixed(1)}s
             {files.find((f) => f.id === fileId)?.width && files.find((f) => f.id === fileId)?.height
               ? ` · ${files.find((f) => f.id === fileId)?.width}×${files.find((f) => f.id === fileId)?.height}`
-              : ''}
+              : ""}
           </div>
         </div>
       )}
@@ -222,7 +228,7 @@ function OutputConfig({
     <>
       <ConfigField label="Format">
         <select
-          value={config.format || 'mp4'}
+          value={config.format || "mp4"}
           onChange={(e) => onChange({ format: e.target.value })}
           className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
         >
@@ -374,7 +380,7 @@ function TranscodeConfig({
     <>
       <ConfigField label="Codec">
         <select
-          value={config.codec || 'libx264'}
+          value={config.codec || "libx264"}
           onChange={(e) => onChange({ codec: e.target.value })}
           className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
         >
@@ -395,7 +401,7 @@ function TranscodeConfig({
       </ConfigField>
       <ConfigField label="Preset">
         <select
-          value={config.preset || 'medium'}
+          value={config.preset || "medium"}
           onChange={(e) => onChange({ preset: e.target.value })}
           className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
         >
@@ -514,7 +520,7 @@ function FlipConfig({
   return (
     <ConfigField label="Direction">
       <select
-        value={config.direction || 'horizontal'}
+        value={config.direction || "horizontal"}
         onChange={(e) => onChange({ direction: e.target.value })}
         className="w-full px-2 py-1.5 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200 focus:border-blue-500 focus:outline-none"
       >

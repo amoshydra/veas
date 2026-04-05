@@ -25,11 +25,7 @@ pipelinesRoute.post("/execute", async (c) => {
   });
 
   // Update node graph
-  const existing = db
-    .select()
-    .from(nodeGraphs)
-    .where(eq(nodeGraphs.sessionId, sessionId))
-    .get();
+  const existing = db.select().from(nodeGraphs).where(eq(nodeGraphs.sessionId, sessionId)).get();
 
   if (existing) {
     db.update(nodeGraphs)
@@ -88,7 +84,7 @@ pipelinesRoute.get("/stream/:pipelineId", async (c) => {
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
       },
-    }
+    },
   );
 });
 
@@ -100,11 +96,7 @@ pipelinesRoute.post("/save", async (c) => {
     return c.json({ error: "Missing sessionId" }, 400);
   }
 
-  const existing = db
-    .select()
-    .from(nodeGraphs)
-    .where(eq(nodeGraphs.sessionId, sessionId))
-    .get();
+  const existing = db.select().from(nodeGraphs).where(eq(nodeGraphs.sessionId, sessionId)).get();
 
   if (existing) {
     db.update(nodeGraphs)
@@ -118,11 +110,7 @@ pipelinesRoute.post("/save", async (c) => {
       .where(eq(nodeGraphs.id, existing.id))
       .run();
 
-    const updated = db
-      .select()
-      .from(nodeGraphs)
-      .where(eq(nodeGraphs.id, existing.id))
-      .get();
+    const updated = db.select().from(nodeGraphs).where(eq(nodeGraphs.id, existing.id)).get();
     return c.json(updated);
   }
 
@@ -145,11 +133,7 @@ pipelinesRoute.post("/save", async (c) => {
 pipelinesRoute.get("/:sessionId", (c) => {
   const sessionId = c.req.param("sessionId");
 
-  const graph = db
-    .select()
-    .from(nodeGraphs)
-    .where(eq(nodeGraphs.sessionId, sessionId))
-    .get();
+  const graph = db.select().from(nodeGraphs).where(eq(nodeGraphs.sessionId, sessionId)).get();
 
   if (!graph) {
     return c.json({ nodes: [], connections: [], viewport: {} });
@@ -182,9 +166,7 @@ pipelinesRoute.get("/pipeline/:pipelineId/stream", async (c) => {
         const encoder = new TextEncoder();
 
         const send = (event: string, data: unknown) => {
-          controller.enqueue(
-            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-          );
+          controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
         };
 
         const completedJobs = pipelineJobs.filter((j) => j.status === "completed");
@@ -229,7 +211,11 @@ pipelinesRoute.get("/pipeline/:pipelineId/stream", async (c) => {
           if (job.status !== "completed" && job.status !== "failed") {
             const onProgress = (data: unknown) => send("progress", data);
             const onComplete = (data: unknown) => {
-              send("nodeComplete", { ...(data as Record<string, unknown>), nodeId: job.nodeId, jobId: job.id });
+              send("nodeComplete", {
+                ...(data as Record<string, unknown>),
+                nodeId: job.nodeId,
+                jobId: job.id,
+              });
               const allDone = db
                 .select()
                 .from(jobs)
@@ -257,7 +243,12 @@ pipelinesRoute.get("/pipeline/:pipelineId/stream", async (c) => {
               }
             };
             const onError = (data: unknown) => {
-              send("error", { ...(data as Record<string, unknown>), nodeId: job.nodeId, jobId: job.id, pipelineId });
+              send("error", {
+                ...(data as Record<string, unknown>),
+                nodeId: job.nodeId,
+                jobId: job.id,
+                pipelineId,
+              });
               cleanup();
               controller.close();
             };
@@ -265,7 +256,7 @@ pipelinesRoute.get("/pipeline/:pipelineId/stream", async (c) => {
             listeners.push(
               { jobId: job.id, event: `progress:${job.id}`, fn: onProgress },
               { jobId: job.id, event: `complete:${job.id}`, fn: onComplete },
-              { jobId: job.id, event: `error:${job.id}`, fn: onError }
+              { jobId: job.id, event: `error:${job.id}`, fn: onError },
             );
 
             progressBus.on(`progress:${job.id}`, onProgress);
@@ -289,7 +280,7 @@ pipelinesRoute.get("/pipeline/:pipelineId/stream", async (c) => {
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
       },
-    }
+    },
   );
 });
 

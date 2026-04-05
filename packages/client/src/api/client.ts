@@ -16,8 +16,7 @@ const headers = {
 
 export const api = {
   // Sessions
-  listSessions: () =>
-    fetch(`${API_BASE}/sessions?ownerId=${ownerId}`).then((r) => r.json()),
+  listSessions: () => fetch(`${API_BASE}/sessions?ownerId=${ownerId}`).then((r) => r.json()),
 
   createSession: (data: { name?: string }) =>
     fetch(`${API_BASE}/sessions`, {
@@ -57,9 +56,7 @@ export const api = {
   },
 
   listFiles: (sessionId: string) =>
-    fetch(`${API_BASE}/files?sessionId=${sessionId}`, { headers }).then((r) =>
-      r.json()
-    ),
+    fetch(`${API_BASE}/files?sessionId=${sessionId}`, { headers }).then((r) => r.json()),
 
   getFileProbe: (fileId: string) =>
     fetch(`${API_BASE}/files/${fileId}/probe`, { headers }).then((r) => r.json()),
@@ -75,9 +72,7 @@ export const api = {
 
   // Jobs
   listJobs: (sessionId: string) =>
-    fetch(`${API_BASE}/jobs?sessionId=${sessionId}`, { headers }).then((r) =>
-      r.json()
-    ),
+    fetch(`${API_BASE}/jobs?sessionId=${sessionId}`, { headers }).then((r) => r.json()),
 
   createJob: (data: {
     sessionId: string;
@@ -98,7 +93,7 @@ export const api = {
       sessionId: string;
       inputFiles: string[];
       params: Record<string, unknown>;
-    }
+    },
   ) =>
     fetch(`${API_BASE}/operations/${operation}`, {
       method: "POST",
@@ -107,14 +102,19 @@ export const api = {
     }).then((r) => r.json()),
 
   // SSE
-  subscribeToJob: (jobId: string) =>
-    new EventSource(`${API_BASE}/jobs/${jobId}/stream`),
+  subscribeToJob: (jobId: string) => new EventSource(`${API_BASE}/jobs/${jobId}/stream`),
 
   // Pipelines
   executePipeline: (
     sessionId: string,
     nodes: Array<{ id: string; type: string; config: Record<string, any> }>,
-    connections: Array<{ id: string; fromNode: string; fromPort: string; toNode: string; toPort: string }>
+    connections: Array<{
+      id: string;
+      fromNode: string;
+      fromPort: string;
+      toNode: string;
+      toPort: string;
+    }>,
   ) =>
     fetch(`${API_BASE}/pipelines/execute`, {
       method: "POST",
@@ -129,7 +129,7 @@ export const api = {
       connections?: any[];
       viewport?: { x: number; y: number; zoom: number };
       name?: string;
-    }
+    },
   ) =>
     fetch(`${API_BASE}/pipelines/save`, {
       method: "POST",

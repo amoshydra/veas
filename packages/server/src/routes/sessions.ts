@@ -45,11 +45,7 @@ sessionsRoute.get("/:id/summary", (c) => {
   const session = getSession(c.req.param("id"), ownerId);
   if (!session) return c.json({ error: "Session not found" }, 404);
 
-  const sessionFiles = db
-    .select()
-    .from(files)
-    .where(eq(files.sessionId, session.id))
-    .all();
+  const sessionFiles = db.select().from(files).where(eq(files.sessionId, session.id)).all();
 
   return c.json({
     fileCount: sessionFiles.length,

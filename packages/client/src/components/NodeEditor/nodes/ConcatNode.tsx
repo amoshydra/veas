@@ -1,10 +1,10 @@
-import { Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
-import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
-import { useContextMenu } from './useContextMenu.js';
-import { NodeContextMenu } from './NodeContextMenu.js';
-import { ResizeHandle } from './ResizeHandle.js';
-import { ConnectionHandle } from './ConnectionHandle.js';
+import { Position } from "@xyflow/react";
+import type { NodeProps } from "@xyflow/react";
+import { useNodeGraphStore } from "../../../stores/nodeGraph.js";
+import { useContextMenu } from "./useContextMenu.js";
+import { NodeContextMenu } from "./NodeContextMenu.js";
+import { ResizeHandle } from "./ResizeHandle.js";
+import { ConnectionHandle } from "./ConnectionHandle.js";
 
 interface ConcatNodeProps extends NodeProps {
   data: {
@@ -26,12 +26,15 @@ export function ConcatNode({ id, data, selected }: ConcatNodeProps) {
   const store = useNodeGraphStore();
 
   const statusBorder =
-    status === 'completed' ? 'border-green-500' :
-    status === 'processing' ? 'border-blue-500' :
-    status === 'error' ? 'border-red-500' :
-    'border-slate-600';
+    status === "completed"
+      ? "border-green-500"
+      : status === "processing"
+        ? "border-blue-500"
+        : status === "error"
+          ? "border-red-500"
+          : "border-slate-600";
 
-  const hasOutput = status === 'completed' && cachePath;
+  const hasOutput = status === "completed" && cachePath;
 
   const updateConfig = (updates: Record<string, any>) => {
     store.updateNodeConfig(id, updates);
@@ -43,31 +46,37 @@ export function ConcatNode({ id, data, selected }: ConcatNodeProps) {
     <div
       ref={menuRef}
       className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[200px] relative ${
-        selected ? 'ring-2 ring-blue-400' : ''
+        selected ? "ring-2 ring-blue-400" : ""
       }`}
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: "none" }}
     >
-      <ResizeHandle minWidth={200} selected={selected} />
+      <ResizeHandle
+        minWidth={200}
+        selected={selected}
+      />
       <ConnectionHandle
         type="target"
         position={Position.Left}
         id="video1"
         portType="video"
-        style={{ top: '30%' }}
+        style={{ top: "30%" }}
       />
       <ConnectionHandle
         type="target"
         position={Position.Left}
         id="video2"
         portType="video"
-        style={{ top: '70%' }}
+        style={{ top: "70%" }}
       />
       <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700">
         <span className="text-lg">🔗</span>
         <span className="font-semibold text-sm flex-1">Concat</span>
         <div className="relative">
           <button
-            onClick={(e) => { e.stopPropagation(); toggleMenu(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMenu();
+            }}
             className="text-slate-400 hover:text-slate-200 p-1 rounded"
             title="More options"
           >
@@ -76,14 +85,17 @@ export function ConcatNode({ id, data, selected }: ConcatNodeProps) {
           {menuOpen && (
             <NodeContextMenu
               nodeId={id}
-              onDelete={(nodeId) => { store.removeNode(nodeId); closeMenu(); }}
+              onDelete={(nodeId) => {
+                store.removeNode(nodeId);
+                closeMenu();
+              }}
               onClose={closeMenu}
             />
           )}
         </div>
-        {status === 'completed' && <span className="text-xs text-green-400">✓</span>}
-        {status === 'processing' && <span className="text-xs text-blue-400 animate-pulse">●</span>}
-        {status === 'error' && <span className="text-xs text-red-400">✗</span>}
+        {status === "completed" && <span className="text-xs text-green-400">✓</span>}
+        {status === "processing" && <span className="text-xs text-blue-400 animate-pulse">●</span>}
+        {status === "error" && <span className="text-xs text-red-400">✗</span>}
       </div>
 
       <div className="nodrag cursor-default px-3 py-2 space-y-2">
@@ -98,9 +110,7 @@ export function ConcatNode({ id, data, selected }: ConcatNodeProps) {
         ) : error ? (
           <div className="text-red-400 text-xs truncate">{error}</div>
         ) : (
-          <div className="text-xs text-slate-400">
-            Join 2 videos together
-          </div>
+          <div className="text-xs text-slate-400">Join 2 videos together</div>
         )}
       </div>
 

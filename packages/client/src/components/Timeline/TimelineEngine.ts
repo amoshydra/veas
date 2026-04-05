@@ -29,11 +29,7 @@ export class TimelineEngine {
   private rafId = 0;
   private dpr: number;
 
-  constructor(
-    canvas: HTMLCanvasElement,
-    state: TimelineState,
-    callbacks: TimelineCallbacks
-  ) {
+  constructor(canvas: HTMLCanvasElement, state: TimelineState, callbacks: TimelineCallbacks) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d")!;
     this.state = state;
@@ -137,7 +133,8 @@ export class TimelineEngine {
       // Dim outside trim region
       ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
       if (trimLeftX > 0) ctx.fillRect(0, trackY, Math.min(trimLeftX, w), trackH);
-      if (trimRightX < w) ctx.fillRect(Math.max(trimRightX, 0), trackY, w - Math.max(trimRightX, 0), trackH);
+      if (trimRightX < w)
+        ctx.fillRect(Math.max(trimRightX, 0), trackY, w - Math.max(trimRightX, 0), trackH);
 
       // Trim region highlight
       ctx.fillStyle = TRIM_OVERLAY;
@@ -145,7 +142,7 @@ export class TimelineEngine {
         Math.max(trimLeftX, 0),
         trackY,
         Math.min(trimRightX, w) - Math.max(trimLeftX, 0),
-        trackH
+        trackH,
       );
 
       // Trim handles
@@ -195,8 +192,14 @@ export class TimelineEngine {
 
       ctx.drawImage(
         sprite,
-        col * frameWidth, row * frameHeight, frameWidth, frameHeight,
-        dx, y, Math.ceil(dw) + 1, h
+        col * frameWidth,
+        row * frameHeight,
+        frameWidth,
+        frameHeight,
+        dx,
+        y,
+        Math.ceil(dw) + 1,
+        h,
       );
     }
 
@@ -425,7 +428,7 @@ export class TimelineEngine {
       return;
     }
 
-    const timeDelta = (e.movementX) / state.pixelsPerSecond;
+    const timeDelta = e.movementX / state.pixelsPerSecond;
 
     switch (this.drag.type) {
       case "dragging-playhead": {
@@ -439,7 +442,10 @@ export class TimelineEngine {
         break;
       }
       case "dragging-trim-right": {
-        const newEnd = Math.min(state.duration, Math.max(state.trimStart + 0.1, state.trimEnd + timeDelta));
+        const newEnd = Math.min(
+          state.duration,
+          Math.max(state.trimStart + 0.1, state.trimEnd + timeDelta),
+        );
         this.callbacks.onTrimChange(state.trimStart, newEnd);
         break;
       }

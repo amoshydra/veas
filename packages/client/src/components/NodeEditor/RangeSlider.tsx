@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, useState } from 'react';
+import { useRef, useCallback, useEffect, useState } from "react";
 
 interface RangeSliderProps {
   min: number;
@@ -30,20 +30,23 @@ export function RangeSlider({
   const trackRef = useRef<HTMLDivElement>(null);
   const startHandleRef = useRef<HTMLDivElement>(null);
   const endHandleRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState<'start' | 'end' | 'seek' | null>(null);
+  const [dragging, setDragging] = useState<"start" | "end" | "seek" | null>(null);
   const [hoverValue, setHoverValue] = useState<number | null>(null);
 
   const [internalZoom, setInternalZoom] = useState(1.0);
   const [viewCenter, setViewCenter] = useState((min + max) / 2);
 
   const zoomLevel = controlledZoom ?? internalZoom;
-  const setZoomLevel = useCallback((z: number) => {
-    if (onZoomChange) {
-      onZoomChange(z);
-    } else {
-      setInternalZoom(z);
-    }
-  }, [onZoomChange]);
+  const setZoomLevel = useCallback(
+    (z: number) => {
+      if (onZoomChange) {
+        onZoomChange(z);
+      } else {
+        setInternalZoom(z);
+      }
+    },
+    [onZoomChange],
+  );
 
   const clamp = (val: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, val));
 
@@ -65,7 +68,7 @@ export function RangeSlider({
       const pct = (clientX - rect.left) / rect.width;
       return clamp(viewStart + pct * visibleSpan, min, max);
     },
-    [viewStart, visibleSpan, min, max]
+    [viewStart, visibleSpan, min, max],
   );
 
   const handleWheel = useCallback(
@@ -95,25 +98,22 @@ export function RangeSlider({
         setViewCenter(clamp(newViewCenter, min + newVisibleSpan / 2, max - newVisibleSpan / 2));
       }
     },
-    [viewStart, visibleSpan, viewCenter, zoomLevel, totalRange, min, max, setZoomLevel]
+    [viewStart, visibleSpan, viewCenter, zoomLevel, totalRange, min, max, setZoomLevel],
   );
 
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
-    track.addEventListener('wheel', handleWheel, { passive: false });
-    return () => track.removeEventListener('wheel', handleWheel);
+    track.addEventListener("wheel", handleWheel, { passive: false });
+    return () => track.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
-  const handleHandlePointerDown = useCallback(
-    (e: React.PointerEvent, type: 'start' | 'end') => {
-      e.preventDefault();
-      e.stopPropagation();
-      setDragging(type);
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    },
-    []
-  );
+  const handleHandlePointerDown = useCallback((e: React.PointerEvent, type: "start" | "end") => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragging(type);
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  }, []);
 
   const handleTrackPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -130,9 +130,9 @@ export function RangeSlider({
       if (onSeek) {
         onSeek(val);
       }
-      setDragging('seek');
+      setDragging("seek");
     },
-    [pxToValue, onSeek]
+    [pxToValue, onSeek],
   );
 
   useEffect(() => {
@@ -140,11 +140,11 @@ export function RangeSlider({
 
     const handleMove = (e: PointerEvent) => {
       const val = pxToValue(e.clientX);
-      if (dragging === 'start') {
+      if (dragging === "start") {
         onChange(clamp(val, min, end), end);
-      } else if (dragging === 'end') {
+      } else if (dragging === "end") {
         onChange(start, clamp(val, start, max));
-      } else if (dragging === 'seek' && onSeek) {
+      } else if (dragging === "seek" && onSeek) {
         onSeek(clamp(val, min, max));
       }
     };
@@ -152,22 +152,22 @@ export function RangeSlider({
     const handleUp = () => {
       const wasDragging = dragging;
       setDragging(null);
-      if (wasDragging === 'seek' && onSeekEnd) {
+      if (wasDragging === "seek" && onSeekEnd) {
         onSeekEnd();
       }
     };
 
-    window.addEventListener('pointermove', handleMove);
-    window.addEventListener('pointerup', handleUp);
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
     return () => {
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
     };
   }, [dragging, min, max, start, end, onChange, onSeek, onSeekEnd, pxToValue]);
 
   const timeToPct = useCallback(
     (time: number) => ((time - viewStart) / visibleSpan) * 100,
-    [viewStart, visibleSpan]
+    [viewStart, visibleSpan],
   );
 
   const startPct = clamp(timeToPct(start), 0, 100);
@@ -227,7 +227,7 @@ export function RangeSlider({
           {currentPct != null && (
             <div
               className="absolute top-0 w-1 h-full bg-yellow-400 z-10 pointer-events-none rounded-full"
-              style={{ left: `${currentPct}%`, transform: 'translateX(-50%)' }}
+              style={{ left: `${currentPct}%`, transform: "translateX(-50%)" }}
             />
           )}
 
@@ -236,7 +236,7 @@ export function RangeSlider({
               ref={startHandleRef}
               className="absolute top-0 w-7 h-full bg-blue-400 rounded-md cursor-ew-resize z-30 -ml-3.5 flex items-center justify-center hover:bg-blue-300 active:bg-blue-200 transition-colors touch-none"
               style={{ left: `${startPct}%` }}
-              onPointerDown={(e) => handleHandlePointerDown(e, 'start')}
+              onPointerDown={(e) => handleHandlePointerDown(e, "start")}
             >
               <div className="flex flex-col gap-0.5">
                 <div className="w-0.5 h-2 bg-slate-800 rounded" />
@@ -251,7 +251,7 @@ export function RangeSlider({
               ref={endHandleRef}
               className="absolute top-0 w-7 h-full bg-blue-400 rounded-md cursor-ew-resize z-30 -ml-3.5 flex items-center justify-center hover:bg-blue-300 active:bg-blue-200 transition-colors touch-none"
               style={{ left: `${endPct}%` }}
-              onPointerDown={(e) => handleHandlePointerDown(e, 'end')}
+              onPointerDown={(e) => handleHandlePointerDown(e, "end")}
             >
               <div className="flex flex-col gap-0.5">
                 <div className="w-0.5 h-2 bg-slate-800 rounded" />
@@ -279,7 +279,15 @@ export function RangeSlider({
         <div className="flex items-center gap-1">
           {zoomLevel > 1 && (
             <button
-              onClick={() => setViewCenter(clamp(viewCenter - visibleSpan * 0.6, min + visibleSpan / 2, max - visibleSpan / 2))}
+              onClick={() =>
+                setViewCenter(
+                  clamp(
+                    viewCenter - visibleSpan * 0.6,
+                    min + visibleSpan / 2,
+                    max - visibleSpan / 2,
+                  ),
+                )
+              }
               className="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 touch-none"
               title="Pan left"
               onPointerDown={(e) => e.stopPropagation()}
@@ -296,7 +304,7 @@ export function RangeSlider({
             −
           </button>
           <span className="text-[10px] text-slate-500 min-w-[40px] text-center">
-            {zoomLevel <= 1 ? '1x' : `${zoomLevel.toFixed(0)}x`}
+            {zoomLevel <= 1 ? "1x" : `${zoomLevel.toFixed(0)}x`}
           </span>
           <button
             onClick={handleZoomIn}
@@ -309,7 +317,15 @@ export function RangeSlider({
           {zoomLevel > 1 && (
             <>
               <button
-                onClick={() => setViewCenter(clamp(viewCenter + visibleSpan * 0.6, min + visibleSpan / 2, max - visibleSpan / 2))}
+                onClick={() =>
+                  setViewCenter(
+                    clamp(
+                      viewCenter + visibleSpan * 0.6,
+                      min + visibleSpan / 2,
+                      max - visibleSpan / 2,
+                    ),
+                  )
+                }
                 className="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 touch-none"
                 title="Pan right"
                 onPointerDown={(e) => e.stopPropagation()}

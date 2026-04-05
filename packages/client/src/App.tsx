@@ -6,8 +6,14 @@ export default function App() {
   return (
     <div className="h-full flex flex-col">
       <Routes>
-        <Route path="/" element={<Sessions />} />
-        <Route path="/editor/:sessionId" element={<Editor />} />
+        <Route
+          path="/"
+          element={<Sessions />}
+        />
+        <Route
+          path="/editor/:sessionId"
+          element={<Editor />}
+        />
       </Routes>
     </div>
   );

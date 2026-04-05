@@ -1,23 +1,34 @@
-import { Handle, Position } from '@xyflow/react';
-import { useRef, useState } from 'react';
+import { Handle, Position } from "@xyflow/react";
+import { useRef, useState } from "react";
 
 interface ConnectionHandleProps {
-  type: 'source' | 'target';
+  type: "source" | "target";
   position: Position;
   id: string;
-  portType: 'video' | 'audio' | 'image';
-  onClick?: (info: { handleId: string; portType: string; type: 'source' | 'target' }, position: { x: number; y: number }) => void;
-  onDragStart?: (info: { handleId: string; portType: string; type: 'source' | 'target' }) => void;
+  portType: "video" | "audio" | "image";
+  onClick?: (
+    info: { handleId: string; portType: string; type: "source" | "target" },
+    position: { x: number; y: number },
+  ) => void;
+  onDragStart?: (info: { handleId: string; portType: string; type: "source" | "target" }) => void;
   style?: React.CSSProperties;
 }
 
 const colorMap = {
-  video: 'bg-blue-400',
-  audio: 'bg-purple-400',
-  image: 'bg-green-400',
+  video: "bg-blue-400",
+  audio: "bg-purple-400",
+  image: "bg-green-400",
 };
 
-export function ConnectionHandle({ type, position, id, portType, onClick, onDragStart, style }: ConnectionHandleProps) {
+export function ConnectionHandle({
+  type,
+  position,
+  id,
+  portType,
+  onClick,
+  onDragStart,
+  style,
+}: ConnectionHandleProps) {
   const [isDragging, setIsDragging] = useState(false);
   const startRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -48,7 +59,7 @@ export function ConnectionHandle({ type, position, id, portType, onClick, onDrag
     setIsDragging(false);
   };
 
-  const translateX = position === Position.Left ? '-translate-x-1/2' : 'translate-x-1/2';
+  const translateX = position === Position.Left ? "-translate-x-1/2" : "translate-x-1/2";
   const color = colorMap[portType];
 
   return (
@@ -62,7 +73,9 @@ export function ConnectionHandle({ type, position, id, portType, onClick, onDrag
       onPointerUp={handlePointerUp}
       style={style}
     >
-      <span className="text-white text-sm font-bold leading-none select-none pointer-events-none">+</span>
+      <span className="text-white text-sm font-bold leading-none select-none pointer-events-none">
+        +
+      </span>
     </Handle>
   );
 }

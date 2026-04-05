@@ -46,7 +46,10 @@ export default function TranscodePanel({ sessionId, fileId }: Props) {
           className="w-full p-2 bg-slate-700 rounded text-sm border border-slate-600"
         >
           {CODECS.map((c) => (
-            <option key={c.value} value={c.value}>
+            <option
+              key={c.value}
+              value={c.value}
+            >
               {c.label}
             </option>
           ))}
@@ -55,9 +58,7 @@ export default function TranscodePanel({ sessionId, fileId }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-slate-400 mb-1">
-            Quality (CRF): {crf}
-          </label>
+          <label className="block text-xs text-slate-400 mb-1">Quality (CRF): {crf}</label>
           <input
             type="range"
             min="18"
@@ -75,7 +76,10 @@ export default function TranscodePanel({ sessionId, fileId }: Props) {
             className="w-full p-2 bg-slate-700 rounded text-sm border border-slate-600"
           >
             {PRESETS.map((p) => (
-              <option key={p} value={p}>
+              <option
+                key={p}
+                value={p}
+              >
                 {p}
               </option>
             ))}
@@ -83,7 +87,10 @@ export default function TranscodePanel({ sessionId, fileId }: Props) {
         </div>
       </div>
 
-      <ProgressIndicator percent={progress} status={status} />
+      <ProgressIndicator
+        percent={progress}
+        status={status}
+      />
 
       <button
         onClick={handleTranscode}

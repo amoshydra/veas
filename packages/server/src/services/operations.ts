@@ -61,7 +61,7 @@ function timeToSeconds(time: string): number {
 export function buildFfmpegArgs(
   operation: string,
   inputFiles: string[],
-  params: Record<string, any>
+  params: Record<string, any>,
 ): string[] {
   const format = params.format || "mp4";
 
@@ -84,10 +84,16 @@ export function buildFfmpegArgs(
     case "crop": {
       const { width, height, x, y } = params;
       return [
-        "-i", inputFiles[0],
-        "-vf", `crop=${width}:${height}:${x || 0}:${y || 0}`,
-        "-c:v", "libx264", "-preset", params.preset || "medium",
-        "-c:a", "copy",
+        "-i",
+        inputFiles[0],
+        "-vf",
+        `crop=${width}:${height}:${x || 0}:${y || 0}`,
+        "-c:v",
+        "libx264",
+        "-preset",
+        params.preset || "medium",
+        "-c:a",
+        "copy",
       ];
     }
 
@@ -95,14 +101,22 @@ export function buildFfmpegArgs(
       const listPath = params.listPath || "/tmp/concat.txt";
       const filterComplex = `concat=n=${inputFiles.length}:v=1:a=1[v][a]`;
       return [
-        "-i", inputFiles[0],
-        "-i", inputFiles[1],
-        "-filter_complex", filterComplex,
-        "-map", "[v]",
-        "-map", "[a]",
-        "-c:v", "libx264",
-        "-preset", params.preset || "medium",
-        "-c:a", "aac",
+        "-i",
+        inputFiles[0],
+        "-i",
+        inputFiles[1],
+        "-filter_complex",
+        filterComplex,
+        "-map",
+        "[v]",
+        "-map",
+        "[a]",
+        "-c:v",
+        "libx264",
+        "-preset",
+        params.preset || "medium",
+        "-c:a",
+        "aac",
       ];
     }
 
@@ -131,13 +145,19 @@ export function buildFfmpegArgs(
       const scale = params.width
         ? `scale=${params.width}:-2`
         : params.height
-        ? `scale=-2:${params.height}`
-        : `scale=${params.scale}`;
+          ? `scale=-2:${params.height}`
+          : `scale=${params.scale}`;
       return [
-        "-i", inputFiles[0],
-        "-vf", scale,
-        "-c:v", "libx264", "-preset", params.preset || "medium",
-        "-c:a", "copy",
+        "-i",
+        inputFiles[0],
+        "-vf",
+        scale,
+        "-c:v",
+        "libx264",
+        "-preset",
+        params.preset || "medium",
+        "-c:a",
+        "copy",
       ];
     }
 
@@ -152,43 +172,62 @@ export function buildFfmpegArgs(
       if (params.sepia) filters.push("colorbalance=bs=0.2:gs=-0.1:rs=-0.1");
       if (params.vignette) filters.push("vignette=PI/4");
       return [
-        "-i", inputFiles[0],
-        "-vf", filters.join(",") || "copy",
-        "-c:v", "libx264", "-preset", params.preset || "medium",
-        "-c:a", "copy",
+        "-i",
+        inputFiles[0],
+        "-vf",
+        filters.join(",") || "copy",
+        "-c:v",
+        "libx264",
+        "-preset",
+        params.preset || "medium",
+        "-c:a",
+        "copy",
       ];
     }
 
     case "gif": {
       const fps = params.fps || 10;
-      const scale = params.width ? `scale=${params.width}:-1:flags=lanczos` : "scale=480:-1:flags=lanczos";
+      const scale = params.width
+        ? `scale=${params.width}:-1:flags=lanczos`
+        : "scale=480:-1:flags=lanczos";
       return [
-        "-i", inputFiles[0],
-        "-vf", `${fps < 60 ? `fps=${fps},` : ""}${scale},split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse`,
-        "-loop", "0",
+        "-i",
+        inputFiles[0],
+        "-vf",
+        `${fps < 60 ? `fps=${fps},` : ""}${scale},split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse`,
+        "-loop",
+        "0",
       ];
     }
 
     case "speed": {
       const speed = params.speed || 1;
       const ptsFilter = `setpts=${1 / speed}*PTS`;
-      const atempoFilter = speed > 2
-        ? `atempo=${Math.sqrt(speed)},atempo=${Math.sqrt(speed)}`
-        : `atempo=${speed}`;
+      const atempoFilter =
+        speed > 2 ? `atempo=${Math.sqrt(speed)},atempo=${Math.sqrt(speed)}` : `atempo=${speed}`;
       return [
-        "-i", inputFiles[0],
-        "-vf", ptsFilter,
-        "-af", atempoFilter,
-        "-c:v", "libx264", "-preset", params.preset || "medium",
+        "-i",
+        inputFiles[0],
+        "-vf",
+        ptsFilter,
+        "-af",
+        atempoFilter,
+        "-c:v",
+        "libx264",
+        "-preset",
+        params.preset || "medium",
       ];
     }
 
     case "audio-extract": {
       return [
-        "-i", inputFiles[0],
+        "-i",
+        inputFiles[0],
         "-vn",
-        "-c:a", params.audioCodec || "libmp3lame",
-        "-q:a", String(params.quality || 2),
+        "-c:a",
+        params.audioCodec || "libmp3lame",
+        "-q:a",
+        String(params.quality || 2),
       ];
     }
 
@@ -199,12 +238,15 @@ export function buildFfmpegArgs(
         "top-right": "W-w-10:10",
         "bottom-left": "10:H-h-10",
         "bottom-right": "W-w-10:H-h-10",
-        "center": "(W-w)/2:(H-h)/2",
+        center: "(W-w)/2:(H-h)/2",
       };
       return [
-        "-i", inputFiles[0],
-        "-i", inputFiles[1],
-        "-filter_complex", `overlay=${overlay[pos] || overlay["bottom-right"]}`,
+        "-i",
+        inputFiles[0],
+        "-i",
+        inputFiles[1],
+        "-filter_complex",
+        `overlay=${overlay[pos] || overlay["bottom-right"]}`,
       ];
     }
 
@@ -215,11 +257,7 @@ export function buildFfmpegArgs(
         180: "transpose=2,transpose=2",
         270: "transpose=2",
       };
-      return [
-        "-i", inputFiles[0],
-        "-vf", transposeMap[angle] || "transpose=1",
-        "-c:a", "copy",
-      ];
+      return ["-i", inputFiles[0], "-vf", transposeMap[angle] || "transpose=1", "-c:a", "copy"];
     }
 
     case "flip": {
@@ -234,19 +272,21 @@ export function buildFfmpegArgs(
     }
 
     case "loop": {
-      return [
-        "-stream_loop", String(params.count || 2),
-        "-i", inputFiles[0],
-        "-c", "copy",
-      ];
+      return ["-stream_loop", String(params.count || 2), "-i", inputFiles[0], "-c", "copy"];
     }
 
     case "subtitle": {
       return [
-        "-i", inputFiles[0],
-        "-vf", `subtitles=${params.subtitlePath}`,
-        "-c:v", "libx264", "-preset", params.preset || "medium",
-        "-c:a", "copy",
+        "-i",
+        inputFiles[0],
+        "-vf",
+        `subtitles=${params.subtitlePath}`,
+        "-c:v",
+        "libx264",
+        "-preset",
+        params.preset || "medium",
+        "-c:a",
+        "copy",
       ];
     }
 
@@ -255,10 +295,14 @@ export function buildFfmpegArgs(
       const y = params.y || 10;
       const w = params.width || 320;
       return [
-        "-i", inputFiles[0],
-        "-i", inputFiles[1],
-        "-filter_complex", `[1:v]scale=${w}:-1[pip];[0:v][pip]overlay=${x}:${y}`,
-        "-c:a", "copy",
+        "-i",
+        inputFiles[0],
+        "-i",
+        inputFiles[1],
+        "-filter_complex",
+        `[1:v]scale=${w}:-1[pip];[0:v][pip]overlay=${x}:${y}`,
+        "-c:a",
+        "copy",
       ];
     }
 
@@ -266,11 +310,16 @@ export function buildFfmpegArgs(
     case "fileOutput": {
       const format = params.format || "mp4";
       return [
-        "-i", inputFiles[0],
-        "-c:v", "libx264",
-        "-crf", String(params.quality ?? 23),
-        "-preset", "medium",
-        "-c:a", "aac",
+        "-i",
+        inputFiles[0],
+        "-c:v",
+        "libx264",
+        "-crf",
+        String(params.quality ?? 23),
+        "-preset",
+        "medium",
+        "-c:a",
+        "aac",
       ];
     }
 

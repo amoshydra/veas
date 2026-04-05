@@ -28,7 +28,7 @@ export function emitError(jobId: string, error: string) {
 }
 
 export interface PipelineEvent {
-  type: 'nodeStart' | 'nodeComplete' | 'nodeError';
+  type: "nodeStart" | "nodeComplete" | "nodeError";
   pipelineId: string;
   nodeId: string;
   status: string;

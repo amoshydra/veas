@@ -1,6 +1,6 @@
-import { useContextMenu } from './useContextMenu.js';
-import { NodeContextMenu } from './NodeContextMenu.js';
-import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
+import { useContextMenu } from "./useContextMenu.js";
+import { NodeContextMenu } from "./NodeContextMenu.js";
+import { useNodeGraphStore } from "../../../stores/nodeGraph.js";
 
 interface ContextMenuButtonProps {
   nodeId: string;
@@ -11,9 +11,15 @@ export function ContextMenuButton({ nodeId }: ContextMenuButtonProps) {
   const { isOpen, toggle, close, menuRef } = useContextMenu();
 
   return (
-    <div ref={menuRef} className="relative">
+    <div
+      ref={menuRef}
+      className="relative"
+    >
       <button
-        onClick={(e) => { e.stopPropagation(); toggle(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggle();
+        }}
         className="text-slate-400 hover:text-slate-200 p-1 rounded"
         title="More options"
       >
@@ -22,7 +28,10 @@ export function ContextMenuButton({ nodeId }: ContextMenuButtonProps) {
       {isOpen && (
         <NodeContextMenu
           nodeId={nodeId}
-          onDelete={(id) => { store.removeNode(id); close(); }}
+          onDelete={(id) => {
+            store.removeNode(id);
+            close();
+          }}
           onClose={close}
         />
       )}

@@ -31,7 +31,12 @@ export type DragState =
   | { type: "dragging-playhead" }
   | { type: "dragging-trim-left"; startTime: number }
   | { type: "dragging-trim-right"; startTime: number }
-  | { type: "dragging-trim-body"; startTrimStart: number; startTrimEnd: number; startMouseX: number }
+  | {
+      type: "dragging-trim-body";
+      startTrimStart: number;
+      startTrimEnd: number;
+      startMouseX: number;
+    }
   | { type: "panning"; startScrollOffset: number; startMouseX: number };
 
 export interface TimelineCallbacks {

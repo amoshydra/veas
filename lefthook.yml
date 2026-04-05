@@ -1,0 +1,6 @@
+pre-commit:
+  jobs:
+    - run: pnpm run lint:fix "{staged_files}"
+      stage_fixed: true
+    - run: pnpm run fmt:fix "{staged_files}"
+      stage_fixed: true

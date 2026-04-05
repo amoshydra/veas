@@ -13,18 +13,18 @@ A client-server video editing application that brings powerful FFmpeg operations
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Server** | Node.js, TypeScript, Hono |
-| **Database** | SQLite with Drizzle ORM |
-| **Video Engine** | FFmpeg, ImageMagick |
-| **Job Queue** | P-Queue |
-| **Client** | React 19, TypeScript, Vite |
-| **State** | Zustand (client), TanStack Query (server) |
-| **Node Graph** | ReactFlow (@xyflow/react) |
-| **Styling** | Tailwind CSS |
-| **Real-Time** | Server-Sent Events (SSE) |
-| **Monorepo** | pnpm workspaces |
+| Layer            | Technology                                |
+| ---------------- | ----------------------------------------- |
+| **Server**       | Node.js, TypeScript, Hono                 |
+| **Database**     | SQLite with Drizzle ORM                   |
+| **Video Engine** | FFmpeg, ImageMagick                       |
+| **Job Queue**    | P-Queue                                   |
+| **Client**       | React 19, TypeScript, Vite                |
+| **State**        | Zustand (client), TanStack Query (server) |
+| **Node Graph**   | ReactFlow (@xyflow/react)                 |
+| **Styling**      | Tailwind CSS                              |
+| **Real-Time**    | Server-Sent Events (SSE)                  |
+| **Monorepo**     | pnpm workspaces                           |
 
 ## Prerequisites
 
@@ -100,56 +100,61 @@ veas/
 ## API Endpoints
 
 ### Sessions
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/sessions` | Create a new session |
-| `GET` | `/api/sessions` | List user's sessions |
-| `GET` | `/api/sessions/:id` | Get session details |
-| `PUT` | `/api/sessions/:id` | Update session |
+
+| Method   | Endpoint            | Description              |
+| -------- | ------------------- | ------------------------ |
+| `POST`   | `/api/sessions`     | Create a new session     |
+| `GET`    | `/api/sessions`     | List user's sessions     |
+| `GET`    | `/api/sessions/:id` | Get session details      |
+| `PUT`    | `/api/sessions/:id` | Update session           |
 | `DELETE` | `/api/sessions/:id` | Delete session and files |
 
 ### Files
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/files/upload` | Upload video (multipart) |
-| `GET` | `/api/files/:id` | Download file (with range requests) |
-| `GET` | `/api/files/:id/probe` | Get media metadata |
-| `GET` | `/api/files/:id/thumbnail` | Generate thumbnail |
+
+| Method | Endpoint                   | Description                         |
+| ------ | -------------------------- | ----------------------------------- |
+| `POST` | `/api/files/upload`        | Upload video (multipart)            |
+| `GET`  | `/api/files/:id`           | Download file (with range requests) |
+| `GET`  | `/api/files/:id/probe`     | Get media metadata                  |
+| `GET`  | `/api/files/:id/thumbnail` | Generate thumbnail                  |
 
 ### Jobs
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/jobs` | Submit processing job |
-| `GET` | `/api/jobs` | List jobs (filterable) |
-| `GET` | `/api/jobs/:id` | Get job status |
-| `GET` | `/api/jobs/:id/stream` | SSE progress stream |
-| `DELETE` | `/api/jobs/:id` | Cancel job |
+
+| Method   | Endpoint               | Description            |
+| -------- | ---------------------- | ---------------------- |
+| `POST`   | `/api/jobs`            | Submit processing job  |
+| `GET`    | `/api/jobs`            | List jobs (filterable) |
+| `GET`    | `/api/jobs/:id`        | Get job status         |
+| `GET`    | `/api/jobs/:id/stream` | SSE progress stream    |
+| `DELETE` | `/api/jobs/:id`        | Cancel job             |
 
 ### Operations
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/operations/trim` | Trim video |
-| `POST` | `/api/operations/crop` | Crop video |
-| `POST` | `/api/operations/concat` | Concatenate videos |
-| `POST` | `/api/operations/transcode` | Transcode (H.264/H.265/VP9) |
-| `POST` | `/api/operations/resize` | Resize with aspect ratio lock |
-| `POST` | `/api/operations/gif` | Palette-optimized GIF |
-| `POST` | `/api/operations/speed` | Change playback speed |
-| `POST` | `/api/operations/audio` | Extract/replace audio |
-| `POST` | `/api/operations/watermark` | Add watermark overlay |
-| `POST` | `/api/operations/rotate` | Rotate/flip video |
-| `POST` | `/api/operations/reverse` | Reverse video/audio |
-| `POST` | `/api/operations/loop` | Loop N times |
-| `POST` | `/api/operations/subtitle` | Burn-in subtitles |
-| `POST` | `/api/operations/pip` | Picture-in-picture |
+
+| Method | Endpoint                    | Description                   |
+| ------ | --------------------------- | ----------------------------- |
+| `POST` | `/api/operations/trim`      | Trim video                    |
+| `POST` | `/api/operations/crop`      | Crop video                    |
+| `POST` | `/api/operations/concat`    | Concatenate videos            |
+| `POST` | `/api/operations/transcode` | Transcode (H.264/H.265/VP9)   |
+| `POST` | `/api/operations/resize`    | Resize with aspect ratio lock |
+| `POST` | `/api/operations/gif`       | Palette-optimized GIF         |
+| `POST` | `/api/operations/speed`     | Change playback speed         |
+| `POST` | `/api/operations/audio`     | Extract/replace audio         |
+| `POST` | `/api/operations/watermark` | Add watermark overlay         |
+| `POST` | `/api/operations/rotate`    | Rotate/flip video             |
+| `POST` | `/api/operations/reverse`   | Reverse video/audio           |
+| `POST` | `/api/operations/loop`      | Loop N times                  |
+| `POST` | `/api/operations/subtitle`  | Burn-in subtitles             |
+| `POST` | `/api/operations/pip`       | Picture-in-picture            |
 
 ### Pipelines
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/pipelines/execute` | Execute node graph pipeline |
-| `GET` | `/api/pipelines/:id/stream` | SSE pipeline progress |
-| `POST` | `/api/pipelines/save` | Save node graph |
-| `GET` | `/api/pipelines/:id` | Load saved node graph |
+
+| Method | Endpoint                    | Description                 |
+| ------ | --------------------------- | --------------------------- |
+| `POST` | `/api/pipelines/execute`    | Execute node graph pipeline |
+| `GET`  | `/api/pipelines/:id/stream` | SSE pipeline progress       |
+| `POST` | `/api/pipelines/save`       | Save node graph             |
+| `GET`  | `/api/pipelines/:id`        | Load saved node graph       |
 
 ## Architecture
 
@@ -186,18 +191,18 @@ veas/
 
 ## Progress
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| 1. Foundation | ✅ Complete | Monorepo, Hono server, SQLite schema |
-| 2. File Management | ✅ Complete | Upload, ffprobe, thumbnails |
-| 3. Job Engine | ✅ Complete | P-Queue, FFmpeg, SSE |
-| 4. Core Operations | ✅ Complete | Trim, crop, concat, transcode, resize, filters |
-| 5. Client Scaffold | ✅ Complete | Vite, routing, API client, stores |
-| 6. Editor UI | 🚧 In Progress | Preview, toolbar, panels, timeline |
-| 7. Session Persistence | 🚧 In Progress | CRUD, localStorage, auto-save |
-| 8. Enhanced Operations | 🚧 In Progress | GIF, speed, audio, watermark, etc. |
-| 9. Polish | ⬜ Pending | Loading states, error boundaries, gestures |
-| 10. Deploy | ⬜ Pending | Docker, production build |
+| Phase                  | Status         | Description                                    |
+| ---------------------- | -------------- | ---------------------------------------------- |
+| 1. Foundation          | ✅ Complete    | Monorepo, Hono server, SQLite schema           |
+| 2. File Management     | ✅ Complete    | Upload, ffprobe, thumbnails                    |
+| 3. Job Engine          | ✅ Complete    | P-Queue, FFmpeg, SSE                           |
+| 4. Core Operations     | ✅ Complete    | Trim, crop, concat, transcode, resize, filters |
+| 5. Client Scaffold     | ✅ Complete    | Vite, routing, API client, stores              |
+| 6. Editor UI           | 🚧 In Progress | Preview, toolbar, panels, timeline             |
+| 7. Session Persistence | 🚧 In Progress | CRUD, localStorage, auto-save                  |
+| 8. Enhanced Operations | 🚧 In Progress | GIF, speed, audio, watermark, etc.             |
+| 9. Polish              | ⬜ Pending     | Loading states, error boundaries, gestures     |
+| 10. Deploy             | ⬜ Pending     | Docker, production build                       |
 
 ## License
 

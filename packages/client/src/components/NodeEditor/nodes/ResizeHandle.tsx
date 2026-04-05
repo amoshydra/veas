@@ -1,4 +1,4 @@
-import { NodeResizeControl } from '@xyflow/react';
+import { NodeResizeControl } from "@xyflow/react";
 
 interface ResizeHandleProps {
   minWidth: number;
@@ -13,7 +13,7 @@ export function ResizeHandle({ minWidth, selected }: ResizeHandleProps) {
       minWidth={minWidth}
       resizeDirection="horizontal"
       className="react-flow__resize-control"
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: "none" }}
     >
       <div className="w-7 h-7 flex items-center justify-center bg-transparent hover:bg-slate-700 rounded cursor-se-resize">
         <span className="text-slate-400 text-sm">↘</span>

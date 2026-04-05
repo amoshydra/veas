@@ -33,20 +33,13 @@ async function processJob(jobId: string) {
   const params = JSON.parse(job.params);
   const inputFiles = JSON.parse(job.inputFiles);
 
-  db.update(jobs)
-    .set({ status: "processing", progress: 0 })
-    .where(eq(jobs.id, jobId))
-    .run();
+  db.update(jobs).set({ status: "processing", progress: 0 }).where(eq(jobs.id, jobId)).run();
 
   try {
     const outputPath = `./data/output/${job.sessionId}/${jobId}_${params.outputName || "output"}.${params.format || "mp4"}`;
 
     if (job.operation === "thumbnail") {
-      await generateThumbnail(
-        inputFiles[0],
-        outputPath,
-        params.timestamp || "00:00:01"
-      );
+      await generateThumbnail(inputFiles[0], outputPath, params.timestamp || "00:00:01");
     } else {
       const args = buildFfmpegArgs(job.operation, inputFiles, params);
       await runFfmpeg({ jobId, args, outputPath });

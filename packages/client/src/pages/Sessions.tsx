@@ -111,9 +111,9 @@ export default function Sessions() {
           <div className="relative bg-slate-800 rounded-xl p-5 w-full max-w-sm space-y-4">
             <h2 className="text-lg font-semibold">Delete Project</h2>
             <p className="text-sm text-slate-300">
-              <strong>"{confirmDelete.name}"</strong> has{" "}
-              {confirmDelete.fileCount} file{confirmDelete.fileCount !== 1 ? "s" : ""}{" "}
-              ({(confirmDelete.totalSize / 1024 / 1024).toFixed(1)} MB).
+              <strong>"{confirmDelete.name}"</strong> has {confirmDelete.fileCount} file
+              {confirmDelete.fileCount !== 1 ? "s" : ""} (
+              {(confirmDelete.totalSize / 1024 / 1024).toFixed(1)} MB).
             </p>
             <p className="text-sm text-slate-400">
               This will permanently delete all videos, outputs, and project data.

@@ -1,11 +1,11 @@
-import { Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
-import { useRef } from 'react';
-import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
-import { useContextMenu } from './useContextMenu.js';
-import { NodeContextMenu } from './NodeContextMenu.js';
-import { ResizeHandle } from './ResizeHandle.js';
-import { ConnectionHandle } from './ConnectionHandle.js';
+import { Position } from "@xyflow/react";
+import type { NodeProps } from "@xyflow/react";
+import { useRef } from "react";
+import { useNodeGraphStore } from "../../../stores/nodeGraph.js";
+import { useContextMenu } from "./useContextMenu.js";
+import { NodeContextMenu } from "./NodeContextMenu.js";
+import { ResizeHandle } from "./ResizeHandle.js";
+import { ConnectionHandle } from "./ConnectionHandle.js";
 
 interface FileItem {
   id: string;
@@ -26,10 +26,13 @@ export function InputNode({ id, data, selected }: NodeProps) {
   const store = useNodeGraphStore();
 
   const statusBorder =
-    status === 'completed' ? 'border-green-500' :
-    status === 'processing' ? 'border-blue-500' :
-    status === 'error' ? 'border-red-500' :
-    'border-slate-600';
+    status === "completed"
+      ? "border-green-500"
+      : status === "processing"
+        ? "border-blue-500"
+        : status === "error"
+          ? "border-red-500"
+          : "border-slate-600";
 
   const hasFile = !!config.fileId;
 
@@ -37,7 +40,7 @@ export function InputNode({ id, data, selected }: NodeProps) {
     const file = files.find((f) => f.id === fileId);
     store.updateNodeConfig(id, {
       fileId,
-      filename: file?.filename || 'Unknown',
+      filename: file?.filename || "Unknown",
     });
   };
 
@@ -54,23 +57,34 @@ export function InputNode({ id, data, selected }: NodeProps) {
     }
   };
 
-  const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef: contextMenuRef } = useContextMenu();
+  const {
+    isOpen: menuOpen,
+    toggle: toggleMenu,
+    close: closeMenu,
+    menuRef: contextMenuRef,
+  } = useContextMenu();
 
   return (
     <div
       ref={contextMenuRef}
       className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[220px] relative ${
-        selected ? 'ring-2 ring-blue-400' : ''
+        selected ? "ring-2 ring-blue-400" : ""
       }`}
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: "none" }}
     >
-      <ResizeHandle minWidth={220} selected={selected} />
+      <ResizeHandle
+        minWidth={220}
+        selected={selected}
+      />
       <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700">
         <span className="text-lg">📁</span>
         <span className="font-semibold text-sm flex-1">Input</span>
         <div className="relative">
           <button
-            onClick={(e) => { e.stopPropagation(); toggleMenu(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMenu();
+            }}
             className="text-slate-400 hover:text-slate-200 p-1 rounded"
             title="More options"
           >
@@ -79,21 +93,20 @@ export function InputNode({ id, data, selected }: NodeProps) {
           {menuOpen && (
             <NodeContextMenu
               nodeId={id}
-              onDelete={(nodeId) => { store.removeNode(nodeId); closeMenu(); }}
+              onDelete={(nodeId) => {
+                store.removeNode(nodeId);
+                closeMenu();
+              }}
               onClose={closeMenu}
             />
           )}
         </div>
-        {status === 'completed' && <span className="text-xs text-green-400">✓</span>}
-        {status === 'processing' && <span className="text-xs text-blue-400 animate-pulse">●</span>}
-        {status === 'error' && <span className="text-xs text-red-400">✗</span>}
+        {status === "completed" && <span className="text-xs text-green-400">✓</span>}
+        {status === "processing" && <span className="text-xs text-blue-400 animate-pulse">●</span>}
+        {status === "error" && <span className="text-xs text-red-400">✗</span>}
       </div>
 
-      {error && (
-        <div className="px-3 py-2 text-xs text-red-400">
-          {error}
-        </div>
-      )}
+      {error && <div className="px-3 py-2 text-xs text-red-400">{error}</div>}
 
       <div className="nodrag cursor-default px-3 py-2 space-y-2">
         {hasFile && (
@@ -107,15 +120,18 @@ export function InputNode({ id, data, selected }: NodeProps) {
         )}
 
         <select
-          value={config.fileId || ''}
+          value={config.fileId || ""}
           onChange={(e) => handleFileSelect(e.target.value)}
           className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
           onClick={(e) => e.stopPropagation()}
         >
           <option value="">Select a file...</option>
           {files.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.filename} {f.duration ? `(${f.duration.toFixed(1)}s)` : ''}
+            <option
+              key={f.id}
+              value={f.id}
+            >
+              {f.filename} {f.duration ? `(${f.duration.toFixed(1)}s)` : ""}
             </option>
           ))}
         </select>
@@ -137,7 +153,10 @@ export function InputNode({ id, data, selected }: NodeProps) {
           onChange={handleUpload}
         />
         <button
-          onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            fileInputRef.current?.click();
+          }}
           className="w-full px-2 py-1.5 border border-dashed border-slate-600 rounded text-xs text-slate-400 hover:border-slate-500 hover:bg-slate-700/50 transition-colors"
         >
           📁 Upload new file
@@ -145,7 +164,7 @@ export function InputNode({ id, data, selected }: NodeProps) {
 
         {hasFile && (
           <div className="text-[10px] text-slate-500 truncate">
-            {config.filename || 'File selected'}
+            {config.filename || "File selected"}
           </div>
         )}
       </div>

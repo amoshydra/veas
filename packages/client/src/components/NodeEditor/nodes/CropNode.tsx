@@ -1,12 +1,12 @@
-import { Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useNodeGraphStore } from '../../../stores/nodeGraph.js';
-import { useContextMenu } from './useContextMenu.js';
-import { NodeContextMenu } from './NodeContextMenu.js';
-import { ResizeHandle } from './ResizeHandle.js';
-import { ConnectionHandle } from './ConnectionHandle.js';
-import { CropOverlay } from './CropOverlay.js';
+import { Position } from "@xyflow/react";
+import type { NodeProps } from "@xyflow/react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useNodeGraphStore } from "../../../stores/nodeGraph.js";
+import { useContextMenu } from "./useContextMenu.js";
+import { NodeContextMenu } from "./NodeContextMenu.js";
+import { ResizeHandle } from "./ResizeHandle.js";
+import { ConnectionHandle } from "./ConnectionHandle.js";
+import { CropOverlay } from "./CropOverlay.js";
 
 interface CropRect {
   x: number;
@@ -16,12 +16,12 @@ interface CropRect {
 }
 
 const ASPECT_OPTIONS: { label: string; value: number | null }[] = [
-  { label: 'Free', value: null },
-  { label: '16:9', value: 16 / 9 },
-  { label: '4:3', value: 4 / 3 },
-  { label: '1:1', value: 1 },
-  { label: '9:16', value: 9 / 16 },
-  { label: '3:4', value: 3 / 4 },
+  { label: "Free", value: null },
+  { label: "16:9", value: 16 / 9 },
+  { label: "4:3", value: 4 / 3 },
+  { label: "1:1", value: 1 },
+  { label: "9:16", value: 9 / 16 },
+  { label: "3:4", value: 3 / 4 },
 ];
 
 export function CropNode({ id, data, selected }: NodeProps) {
@@ -31,11 +31,13 @@ export function CropNode({ id, data, selected }: NodeProps) {
   const store = useNodeGraphStore();
 
   const sourceNode = store.edges
-    .filter((e) => e.target === id && e.targetHandle === 'video')
+    .filter((e) => e.target === id && e.targetHandle === "video")
     .map((e) => store.nodes.find((n) => n.id === e.source))
     .find(Boolean);
 
-  const fileId = (config.fileId || sourceNode?.data?.config?.fileId || sourceNode?.data?.outputId) as string | undefined;
+  const fileId = (config.fileId ||
+    sourceNode?.data?.config?.fileId ||
+    sourceNode?.data?.outputId) as string | undefined;
   const hasFile = !!fileId;
 
   const [videoWidth, setVideoWidth] = useState(0);
@@ -53,14 +55,20 @@ export function CropNode({ id, data, selected }: NodeProps) {
   };
 
   const statusBorder =
-    status === 'completed' ? 'border-green-500' :
-    status === 'processing' ? 'border-blue-500' :
-    status === 'error' ? 'border-red-500' :
-    'border-slate-600';
+    status === "completed"
+      ? "border-green-500"
+      : status === "processing"
+        ? "border-blue-500"
+        : status === "error"
+          ? "border-red-500"
+          : "border-slate-600";
 
-  const updateConfig = useCallback((updates: Record<string, any>) => {
-    store.updateNodeConfig(id, updates);
-  }, [store, id]);
+  const updateConfig = useCallback(
+    (updates: Record<string, any>) => {
+      store.updateNodeConfig(id, updates);
+    },
+    [store, id],
+  );
 
   useEffect(() => {
     const video = videoRef.current;
@@ -80,8 +88,8 @@ export function CropNode({ id, data, selected }: NodeProps) {
       }
     };
 
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
-    return () => video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    return () => video.removeEventListener("loadedmetadata", handleLoadedMetadata);
   }, [hasFile, config.width, config.height, updateConfig]);
 
   useEffect(() => {
@@ -109,7 +117,7 @@ export function CropNode({ id, data, selected }: NodeProps) {
         height: Math.round(newCrop.height),
       });
     },
-    [updateConfig]
+    [updateConfig],
   );
 
   const handleFitToVideo = useCallback(() => {
@@ -120,19 +128,19 @@ export function CropNode({ id, data, selected }: NodeProps) {
   const handleCoordChange = useCallback(
     (key: string, value: string) => {
       const num = parseInt(value) || 0;
-      if (key === 'x') {
+      if (key === "x") {
         updateConfig({ x: Math.max(0, Math.min(num, videoWidth - 10)) });
-      } else if (key === 'y') {
+      } else if (key === "y") {
         updateConfig({ y: Math.max(0, Math.min(num, videoHeight - 10)) });
       }
     },
-    [updateConfig, videoWidth, videoHeight]
+    [updateConfig, videoWidth, videoHeight],
   );
 
   const handleSizeChange = useCallback(
     (key: string, value: string) => {
       const num = parseInt(value) || 10;
-      if (key === 'width') {
+      if (key === "width") {
         const w = Math.max(10, Math.min(num, videoWidth - crop.x));
         if (aspectLock) {
           const h = Math.round(w / aspectLock);
@@ -140,7 +148,7 @@ export function CropNode({ id, data, selected }: NodeProps) {
         } else {
           updateConfig({ width: w });
         }
-      } else if (key === 'height') {
+      } else if (key === "height") {
         const h = Math.max(10, Math.min(num, videoHeight - crop.y));
         if (aspectLock) {
           const w = Math.round(h * aspectLock);
@@ -150,7 +158,7 @@ export function CropNode({ id, data, selected }: NodeProps) {
         }
       }
     },
-    [updateConfig, videoWidth, videoHeight, crop.x, crop.y, aspectLock]
+    [updateConfig, videoWidth, videoHeight, crop.x, crop.y, aspectLock],
   );
 
   const handleAspectChange = useCallback(
@@ -158,12 +166,15 @@ export function CropNode({ id, data, selected }: NodeProps) {
       setAspectLock(value);
       if (value) {
         const h = Math.round(crop.width / value);
-        updateConfig({ aspectRatio: value, height: Math.max(10, Math.min(h, videoHeight - crop.y)) });
+        updateConfig({
+          aspectRatio: value,
+          height: Math.max(10, Math.min(h, videoHeight - crop.y)),
+        });
       } else {
         updateConfig({ aspectRatio: null });
       }
     },
-    [updateConfig, crop.width, crop.y, videoHeight]
+    [updateConfig, crop.width, crop.y, videoHeight],
   );
 
   const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef } = useContextMenu();
@@ -172,11 +183,14 @@ export function CropNode({ id, data, selected }: NodeProps) {
     <div
       ref={menuRef}
       className={`rounded-lg border-2 ${statusBorder} bg-slate-800 shadow-lg min-w-[240px] relative ${
-        selected ? 'ring-2 ring-blue-400' : ''
+        selected ? "ring-2 ring-blue-400" : ""
       }`}
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: "none" }}
     >
-      <ResizeHandle minWidth={240} selected={selected} />
+      <ResizeHandle
+        minWidth={240}
+        selected={selected}
+      />
       <ConnectionHandle
         type="target"
         position={Position.Left}
@@ -188,7 +202,10 @@ export function CropNode({ id, data, selected }: NodeProps) {
         <span className="font-semibold text-sm flex-1">Crop</span>
         <div className="relative">
           <button
-            onClick={(e) => { e.stopPropagation(); toggleMenu(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMenu();
+            }}
             className="text-slate-400 hover:text-slate-200 p-1 rounded"
             title="More options"
           >
@@ -197,21 +214,20 @@ export function CropNode({ id, data, selected }: NodeProps) {
           {menuOpen && (
             <NodeContextMenu
               nodeId={id}
-              onDelete={(nodeId) => { store.removeNode(nodeId); closeMenu(); }}
+              onDelete={(nodeId) => {
+                store.removeNode(nodeId);
+                closeMenu();
+              }}
               onClose={closeMenu}
             />
           )}
         </div>
-        {status === 'completed' && <span className="text-xs text-green-400">✓</span>}
-        {status === 'processing' && <span className="text-xs text-blue-400 animate-pulse">●</span>}
-        {status === 'error' && <span className="text-xs text-red-400">✗</span>}
+        {status === "completed" && <span className="text-xs text-green-400">✓</span>}
+        {status === "processing" && <span className="text-xs text-blue-400 animate-pulse">●</span>}
+        {status === "error" && <span className="text-xs text-red-400">✗</span>}
       </div>
 
-      {error && (
-        <div className="px-3 py-2 text-xs text-red-400">
-          {error}
-        </div>
-      )}
+      {error && <div className="px-3 py-2 text-xs text-red-400">{error}</div>}
 
       {!hasFile && (
         <div className="px-3 py-2 text-xs text-slate-400 cursor-default">
@@ -222,7 +238,10 @@ export function CropNode({ id, data, selected }: NodeProps) {
       {hasFile && (
         <div className="nodrag cursor-default px-3 py-2 space-y-3">
           {/* Video preview with crop overlay */}
-          <div ref={videoContainerRef} className="relative w-full">
+          <div
+            ref={videoContainerRef}
+            className="relative w-full"
+          >
             <video
               ref={videoRef}
               src={`/api/files/${fileId}`}
@@ -248,17 +267,20 @@ export function CropNode({ id, data, selected }: NodeProps) {
           <div className="flex items-center gap-2">
             <label className="text-[10px] text-slate-500 w-14">Aspect</label>
             <select
-              value={aspectLock != null ? aspectLock.toFixed(4) : 'free'}
+              value={aspectLock != null ? aspectLock.toFixed(4) : "free"}
               onChange={(e) => {
                 const v = e.target.value;
-                handleAspectChange(v === 'free' ? null : parseFloat(v));
+                handleAspectChange(v === "free" ? null : parseFloat(v));
               }}
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
               className="flex-1 px-2 py-1 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
             >
               {ASPECT_OPTIONS.map((opt) => (
-                <option key={opt.label} value={opt.value != null ? opt.value.toFixed(4) : 'free'}>
+                <option
+                  key={opt.label}
+                  value={opt.value != null ? opt.value.toFixed(4) : "free"}
+                >
                   {opt.label}
                 </option>
               ))}
@@ -279,7 +301,7 @@ export function CropNode({ id, data, selected }: NodeProps) {
               <input
                 type="number"
                 value={Math.round(crop.x)}
-                onChange={(e) => handleCoordChange('x', e.target.value)}
+                onChange={(e) => handleCoordChange("x", e.target.value)}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -293,7 +315,7 @@ export function CropNode({ id, data, selected }: NodeProps) {
               <input
                 type="number"
                 value={Math.round(crop.y)}
-                onChange={(e) => handleCoordChange('y', e.target.value)}
+                onChange={(e) => handleCoordChange("y", e.target.value)}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -307,7 +329,7 @@ export function CropNode({ id, data, selected }: NodeProps) {
               <input
                 type="number"
                 value={Math.round(crop.width)}
-                onChange={(e) => handleSizeChange('width', e.target.value)}
+                onChange={(e) => handleSizeChange("width", e.target.value)}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -321,7 +343,7 @@ export function CropNode({ id, data, selected }: NodeProps) {
               <input
                 type="number"
                 value={Math.round(crop.height)}
-                onChange={(e) => handleSizeChange('height', e.target.value)}
+                onChange={(e) => handleSizeChange("height", e.target.value)}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -334,7 +356,10 @@ export function CropNode({ id, data, selected }: NodeProps) {
 
           {/* Fit to video button */}
           <button
-            onClick={(e) => { e.stopPropagation(); handleFitToVideo(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFitToVideo();
+            }}
             className="w-full px-2 py-1.5 text-xs text-blue-300 bg-slate-700 hover:bg-slate-600 rounded transition-colors"
             title="Set crop to full video dimensions"
           >

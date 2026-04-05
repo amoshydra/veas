@@ -10,16 +10,30 @@ import { enqueueJob } from "../services/job-queue.js";
 const opsRoute = new Hono();
 
 const OPERATION_NAMES = [
-  "trim", "crop", "concat", "transcode", "resize", "filter",
-  "gif", "speed", "audio-extract", "watermark", "rotate", "flip",
-  "reverse", "loop", "subtitle", "pip", "thumbnail",
+  "trim",
+  "crop",
+  "concat",
+  "transcode",
+  "resize",
+  "filter",
+  "gif",
+  "speed",
+  "audio-extract",
+  "watermark",
+  "rotate",
+  "flip",
+  "reverse",
+  "loop",
+  "subtitle",
+  "pip",
+  "thumbnail",
 ];
 
 function createJob(
   sessionId: string,
   operation: string,
   inputFileIds: string[],
-  params: Record<string, any>
+  params: Record<string, any>,
 ) {
   // Resolve file paths from DB
   const inputFilePaths: string[] = [];
@@ -61,12 +75,7 @@ for (const op of OPERATION_NAMES) {
   opsRoute.post(`/${op}`, async (c) => {
     try {
       const body = await c.req.json();
-      const job = createJob(
-        body.sessionId,
-        op,
-        body.inputFiles || [],
-        body.params || {}
-      );
+      const job = createJob(body.sessionId, op, body.inputFiles || [], body.params || {});
       return c.json(job, 201);
     } catch (err: any) {
       return c.json({ error: err.message }, 400);

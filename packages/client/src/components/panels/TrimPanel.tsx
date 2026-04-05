@@ -40,7 +40,14 @@ function parseTime(time: string): number {
 
 const FRAME_STEP = 1 / 30; // ~30fps default
 
-export default function TrimPanel({ sessionId, fileId, videoRef, trimStart, trimEnd, onTrimChange }: Props) {
+export default function TrimPanel({
+  sessionId,
+  fileId,
+  videoRef,
+  trimStart,
+  trimEnd,
+  onTrimChange,
+}: Props) {
   const [start, setStart] = useState(trimStart != null ? formatTime(trimStart) : "00:00.000");
   const [end, setEnd] = useState(trimEnd != null ? formatTime(trimEnd) : "00:10.000");
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -89,12 +96,15 @@ export default function TrimPanel({ sessionId, fileId, videoRef, trimStart, trim
     }
   }, [videoRef, start, onTrimChange]);
 
-  const stepFrame = useCallback((direction: 1 | -1) => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.pause();
-    video.currentTime = Math.max(0, video.currentTime + FRAME_STEP * direction);
-  }, [videoRef]);
+  const stepFrame = useCallback(
+    (direction: 1 | -1) => {
+      const video = videoRef.current;
+      if (!video) return;
+      video.pause();
+      video.currentTime = Math.max(0, video.currentTime + FRAME_STEP * direction);
+    },
+    [videoRef],
+  );
 
   const handleTrim = async () => {
     const result = await api.runOperation("trim", {
@@ -168,7 +178,10 @@ export default function TrimPanel({ sessionId, fileId, videoRef, trimStart, trim
 
       <p className="text-xs text-slate-500">Format: MM:SS.mmm or HH:MM:SS.mmm</p>
 
-      <ProgressIndicator percent={progress} status={status} />
+      <ProgressIndicator
+        percent={progress}
+        status={status}
+      />
 
       <button
         onClick={handleTrim}
