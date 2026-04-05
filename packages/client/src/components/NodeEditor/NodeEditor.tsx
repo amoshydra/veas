@@ -85,12 +85,13 @@ export default function NodeEditor() {
         type: n.type,
         config: n.data.config,
       }));
-      const connections = store.edges.map((e) => ({
+      const connections = store.edges.map((e, index) => ({
         id: e.id,
         fromNode: e.source,
         fromPort: e.sourceHandle,
         toNode: e.target,
         toPort: e.targetHandle,
+        index,
       }));
 
       for (const node of nodes) {

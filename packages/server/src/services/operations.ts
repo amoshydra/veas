@@ -99,18 +99,13 @@ export function buildFfmpegArgs(
 
     case "concat": {
       const listPath = params.listPath || "/tmp/concat.txt";
-      const filterComplex = `concat=n=${inputFiles.length}:v=1:a=1[v][a]`;
       return [
+        "-f",
+        "concat",
+        "-safe",
+        "0",
         "-i",
-        inputFiles[0],
-        "-i",
-        inputFiles[1],
-        "-filter_complex",
-        filterComplex,
-        "-map",
-        "[v]",
-        "-map",
-        "[a]",
+        listPath,
         "-c:v",
         "libx264",
         "-preset",

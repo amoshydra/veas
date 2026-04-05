@@ -24,6 +24,7 @@ interface PipelineConnection {
   fromPort: string;
   toNode: string;
   toPort: string;
+  index?: number;
 }
 
 interface ResolvedNode {
@@ -92,6 +93,7 @@ function topologicalSort(nodes: PipelineNode[], connections: PipelineConnection[
   }
 
   const sorted: ResolvedNode[] = [];
+  const nodeOrder = new Map<string, number>();
   let order = 0;
 
   while (queue.length > 0) {
@@ -99,7 +101,28 @@ function topologicalSort(nodes: PipelineNode[], connections: PipelineConnection[
     const node = nodeMap.get(nodeId);
     if (!node) continue;
 
+    nodeOrder.set(nodeId, order++);
+  }
+
+  for (const [nodeId] of nodeMap) {
+    if (!nodeOrder.has(nodeId)) {
+      nodeOrder.set(nodeId, order++);
+    }
+  }
+
+  queue.length = 0;
+  for (const [nodeId, degree] of inDegree) {
+    if (degree === 0) queue.push(nodeId);
+  }
+
+  order = 0;
+  while (queue.length > 0) {
+    const nodeId = queue.shift()!;
+    const node = nodeMap.get(nodeId);
+    if (!node) continue;
+
     const inputConns = connections.filter((c) => c.toNode === nodeId);
+    inputConns.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
     sorted.push({
       node,
       inputs: inputConns.map((c) => c.fromNode),
