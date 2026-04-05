@@ -1,8 +1,11 @@
-# VEAS — Video Editing as a Service
+# VEAS — Video Editing App Service
 
 A client-server video editing application that brings powerful FFmpeg operations to a mobile-first web interface. Process videos through a REST API with real-time progress updates via Server-Sent Events.
 
 ## Features
+
+<img width="1716" height="1147" alt="veas - a video editing app service" src="https://github.com/user-attachments/assets/620bb944-313f-49c8-9c1b-b2cad5249d7d" />
+
 
 - **20+ Video Operations**: Trim, crop, concat, transcode, resize, filters, GIF conversion, speed change, audio extraction, watermark, rotate, reverse, loop, subtitles, picture-in-picture, and more
 - **Real-Time Progress**: SSE-based progress streaming with frame-accurate ETA
