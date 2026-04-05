@@ -8,7 +8,6 @@ import { jobs, files } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { runFfmpeg, generateThumbnail, ffprobe } from "./ffmpeg.js";
 import { buildFfmpegArgs } from "./operations.js";
-import { emitProgress } from "./progress.js";
 
 const queue = new PQueue({
   concurrency: Math.max(1, cpus().length - 1),

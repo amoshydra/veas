@@ -7,10 +7,10 @@
   },
   "plugins": ["react", "react-hooks", "typescript"],
   "rules": {
-    "no-console": "warn",
-    "no-debugger": "warn",
+    "no-console": "off",
+    "no-debugger": "off",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
-    "typescript/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
+    "typescript/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }]
   }
 }

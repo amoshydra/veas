@@ -110,7 +110,7 @@ export class TimelineEngine {
 
   private render() {
     const { ctx, width: w, height: h, state } = this;
-    const { currentTime, duration, trimStart, trimEnd, scrollOffset, pixelsPerSecond } = state;
+    const { currentTime, trimStart, trimEnd } = state;
 
     ctx.clearRect(0, 0, w, h);
 
@@ -171,7 +171,7 @@ export class TimelineEngine {
       return;
     }
 
-    const { columns, rows, frameWidth, frameHeight, interval, totalFrames } = spriteMeta;
+    const { columns, frameWidth, frameHeight, interval, totalFrames } = spriteMeta;
     const visibleStart = Math.max(0, this.xToTime(0));
     const visibleEnd = Math.min(state.duration, this.xToTime(w));
 
@@ -228,7 +228,7 @@ export class TimelineEngine {
   }
 
   private drawPlayhead(x: number, trackY: number, trackH: number) {
-    const { ctx, width: w } = this;
+    const { ctx } = this;
 
     // Line
     ctx.strokeStyle = "#ef4444";
@@ -250,7 +250,7 @@ export class TimelineEngine {
 
   private drawRuler() {
     const { ctx, width: w, state } = this;
-    const { scrollOffset, pixelsPerSecond, duration } = state;
+    const { scrollOffset: _scrollOffset, pixelsPerSecond, duration } = state;
 
     ctx.fillStyle = RULER_COLOR;
     ctx.fillRect(0, 0, w, RULER_HEIGHT);
@@ -301,7 +301,7 @@ export class TimelineEngine {
   // --- Hit testing ---
 
   private hitTest(x: number, y: number): HitRegion {
-    const { state, width: w } = this;
+    const { state } = this;
     const trackY = RULER_HEIGHT;
     const trackH = TRACK_HEIGHT;
     const playheadX = this.timeToX(state.currentTime);

@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
 import { useNodeGraphStore } from "../../stores/nodeGraph.js";
 import { NODE_DEFINITIONS } from "../../types/nodeGraph.js";
-import type { NodeType } from "../../types/nodeGraph.js";
 
 interface FileItem {
   id: string;

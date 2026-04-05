@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/index.js";
 import { nodeGraphs, jobs } from "../db/schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { executePipeline } from "../services/pipeline.js";
 import { progressBus } from "../services/progress.js";
 import type { PipelineEvent } from "../services/progress.js";

@@ -47,7 +47,13 @@ function PortHandle({ port, type }: { port: PortDefinition; type: "source" | "ta
   );
 }
 
-export function BaseNode({ id, type, selected, data, onConfigChange }: BaseNodeProps) {
+export function BaseNode({
+  id,
+  type,
+  selected,
+  data,
+  onConfigChange: _onConfigChange,
+}: BaseNodeProps) {
   const definition = NODE_DEFINITIONS[type];
   const { config, status, error } = data;
   const store = useNodeGraphStore();

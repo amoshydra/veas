@@ -18,7 +18,6 @@ interface ConcatNodeProps extends NodeProps {
 }
 
 export function ConcatNode({ id, data, selected }: ConcatNodeProps) {
-  const config = data.config as Record<string, any>;
   const status = data.status as string;
   const error = data.error as string | undefined;
   const cachePath = data.cachePath as string | undefined;
@@ -35,10 +34,6 @@ export function ConcatNode({ id, data, selected }: ConcatNodeProps) {
           : "border-slate-600";
 
   const hasOutput = status === "completed" && cachePath;
-
-  const updateConfig = (updates: Record<string, any>) => {
-    store.updateNodeConfig(id, updates);
-  };
 
   const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef } = useContextMenu();
 

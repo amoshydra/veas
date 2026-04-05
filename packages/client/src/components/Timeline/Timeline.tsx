@@ -36,6 +36,19 @@ export default function Timeline({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<TimelineEngine | null>(null);
 
+  const onTimeChangeRef = useRef(onTimeChange);
+  const onTrimChangeRef = useRef(onTrimChange);
+  const onZoomChangeRef = useRef(onZoomChange);
+  const onScrollChangeRef = useRef(onScrollChange);
+
+  // Keep refs updated
+  useEffect(() => {
+    onTimeChangeRef.current = onTimeChange;
+    onTrimChangeRef.current = onTrimChange;
+    onZoomChangeRef.current = onZoomChange;
+    onScrollChangeRef.current = onScrollChange;
+  }, [onTimeChange, onTrimChange, onZoomChange, onScrollChange]);
+
   // Create engine
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -51,10 +64,10 @@ export default function Timeline({
     };
 
     const engine = new TimelineEngine(canvasRef.current, state, {
-      onTimeChange,
-      onTrimChange,
-      onZoomChange,
-      onScrollChange,
+      onTimeChange: (t) => onTimeChangeRef.current(t),
+      onTrimChange: (s, e) => onTrimChangeRef.current(s, e),
+      onZoomChange: (p) => onZoomChangeRef.current(p),
+      onScrollChange: (o) => onScrollChangeRef.current(o),
     });
 
     engineRef.current = engine;

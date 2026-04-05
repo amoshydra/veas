@@ -43,7 +43,7 @@ export function ffprobe(filePath: string): Promise<FfprobeResult> {
       if (code !== 0) return reject(new Error(`ffprobe exited with code ${code}`));
       try {
         resolve(JSON.parse(stdout));
-      } catch (e) {
+      } catch {
         reject(new Error("Failed to parse ffprobe output"));
       }
     });

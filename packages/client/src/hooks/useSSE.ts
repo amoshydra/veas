@@ -20,6 +20,13 @@ export function useSSE(jobId: string | null, options: UseSSEOptions = {}) {
     }
   }, []);
 
+  const optionsRef = useRef(options);
+
+  // Keep options ref updated
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
+
   useEffect(() => {
     if (!jobId) {
       cleanup();
@@ -41,7 +48,7 @@ export function useSSE(jobId: string | null, options: UseSSEOptions = {}) {
     es.addEventListener("progress", (e) => {
       const data = JSON.parse(e.data);
       setProgress(data.percent || 0);
-      options.onMessage?.(data);
+      optionsRef.current.onMessage?.(data);
     });
 
     es.addEventListener("complete", (e) => {
@@ -49,7 +56,7 @@ export function useSSE(jobId: string | null, options: UseSSEOptions = {}) {
       setStatus("completed");
       setProgress(100);
       setResult(data);
-      options.onComplete?.(data);
+      optionsRef.current.onComplete?.(data);
       cleanup();
     });
 
@@ -61,7 +68,7 @@ export function useSSE(jobId: string | null, options: UseSSEOptions = {}) {
         setError("Connection error");
       }
       setStatus("failed");
-      options.onError?.(e.data);
+      optionsRef.current.onError?.(e.data);
       cleanup();
     });
 
@@ -70,7 +77,7 @@ export function useSSE(jobId: string | null, options: UseSSEOptions = {}) {
     };
 
     return cleanup;
-  }, [jobId]);
+  }, [jobId, cleanup]);
 
   return { progress, status, result, error };
 }

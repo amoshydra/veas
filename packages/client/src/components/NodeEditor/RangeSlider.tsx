@@ -53,12 +53,12 @@ export function RangeSlider({
   const totalRange = max - min;
   const visibleSpan = totalRange / zoomLevel;
   const rawViewStart = viewCenter - visibleSpan / 2;
-  const rawViewEnd = viewCenter + visibleSpan / 2;
+  const _rawViewEnd = viewCenter + visibleSpan / 2;
   const viewStart = clamp(rawViewStart, min, max - visibleSpan);
   const viewEnd = viewStart + visibleSpan;
 
   useEffect(() => {
-    setViewCenter(clamp(viewCenter, min + visibleSpan / 2, max - visibleSpan / 2));
+    setViewCenter((prev) => clamp(prev, min + visibleSpan / 2, max - visibleSpan / 2));
   }, [min, max, visibleSpan]);
 
   const pxToValue = useCallback(

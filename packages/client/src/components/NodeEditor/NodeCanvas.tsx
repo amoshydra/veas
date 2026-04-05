@@ -31,19 +31,16 @@ import { CropNode } from "./nodes/CropNode.js";
 import { ResizeNode } from "./nodes/ResizeNode.js";
 import { TranscodeNode } from "./nodes/TranscodeNode.js";
 import { ConcatNode } from "./nodes/ConcatNode.js";
-import { BaseNode } from "./nodes/BaseNode.js";
 import { ResizeHandle } from "./nodes/ResizeHandle.js";
 import { ConnectionHandle } from "./nodes/ConnectionHandle.js";
 import { HandlePalette } from "./HandlePalette.js";
-import { Handle, Position } from "@xyflow/react";
+import { Position } from "@xyflow/react";
 
 function makeBaseNodeComponent(type: keyof typeof NODE_DEFINITIONS) {
   return function GenericNode(props: any) {
-    const id = props.id;
     const config = props.data.config || {};
     const status = props.data.status || "idle";
     const error = props.data.error;
-    const store = useNodeGraphStore();
 
     const statusBorder =
       status === "completed"
@@ -55,10 +52,6 @@ function makeBaseNodeComponent(type: keyof typeof NODE_DEFINITIONS) {
             : "border-slate-600";
 
     const def = NODE_DEFINITIONS[type];
-
-    const updateConfig = (updates: Record<string, any>) => {
-      store.updateNodeConfig(id, updates);
-    };
 
     return (
       <div
@@ -171,9 +164,9 @@ function ValidatedEdge({
   sourceY,
   targetX,
   targetY,
-  sourcePosition,
-  targetPosition,
-  style = {},
+  sourcePosition: _sourcePosition,
+  targetPosition: _targetPosition,
+  style: _style = {},
   markerEnd,
 }: any) {
   const edgePath = `M${sourceX},${sourceY} C${sourceX + 50},${sourceY} ${targetX - 50},${targetY} ${targetX},${targetY}`;
@@ -236,7 +229,7 @@ interface FlowInnerDataProps {
   handlePalette: HandlePaletteState | null;
   setHandlePalette: React.Dispatch<React.SetStateAction<HandlePaletteState | null>>;
   store: NodeGraphState;
-  storeEdges: GraphEdge[];
+  storeEdges?: GraphEdge[];
   pendingConnectionRef: React.MutableRefObject<{
     portType: "video" | "audio" | "image";
     direction: "source" | "target";

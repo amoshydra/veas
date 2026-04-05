@@ -21,10 +21,6 @@ export function TranscodeNode({ id, data, selected }: NodeProps) {
           ? "border-red-500"
           : "border-slate-600";
 
-  const updateConfig = (updates: Record<string, any>) => {
-    store.updateNodeConfig(id, updates);
-  };
-
   const { isOpen: menuOpen, toggle: toggleMenu, close: closeMenu, menuRef } = useContextMenu();
 
   return (

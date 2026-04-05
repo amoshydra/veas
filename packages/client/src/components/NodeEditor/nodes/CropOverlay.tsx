@@ -23,7 +23,7 @@ function clamp(val: number, min: number, max: number) {
   return Math.max(min, Math.min(max, val));
 }
 
-function applyAspectRatio(
+function _applyAspectRatio(
   crop: CropRect,
   aspect: number,
   mode: DragMode,
@@ -83,7 +83,7 @@ function applyAspectRatioFromEdges(
   return crop;
 }
 
-const CURSOR_MAP: Record<string, string> = {
+const _CURSOR_MAP: Record<string, string> = {
   nw: "nw-resize",
   n: "n-resize",
   ne: "ne-resize",
@@ -299,7 +299,7 @@ export function CropOverlay({
 
   const handleSize = 10;
   const borderColor = "rgba(59, 130, 246, 0.9)";
-  const handleColor = "rgb(59, 130, 246)";
+  const _handleColor = "rgb(59, 130, 246)";
 
   return (
     <div

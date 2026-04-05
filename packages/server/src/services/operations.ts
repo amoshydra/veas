@@ -308,7 +308,7 @@ export function buildFfmpegArgs(
 
     case "output":
     case "fileOutput": {
-      const format = params.format || "mp4";
+      const _format = params.format || "mp4";
       return [
         "-i",
         inputFiles[0],

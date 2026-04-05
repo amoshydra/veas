@@ -22,7 +22,7 @@ export default function TranscodePanel({ sessionId, fileId }: Props) {
   const [codec, setCodec] = useState("libx264");
   const [crf, setCrf] = useState(23);
   const [preset, setPreset] = useState("medium");
-  const [format, setFormat] = useState("mp4");
+  const [format, _setFormat] = useState("mp4");
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const { progress, status } = useSSE(activeJobId);

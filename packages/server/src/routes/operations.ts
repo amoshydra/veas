@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { join, extname } from "node:path";
+import { writeFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 import { db } from "../db/index.js";
 import { jobs, files } from "../db/schema.js";
 import { eq } from "drizzle-orm";

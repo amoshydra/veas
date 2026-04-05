@@ -220,18 +220,13 @@ filesRoute.get("/:id/sprite", async (c) => {
     const { generateSpriteSheet } = await import("../services/ffmpeg.js");
     const result = await generateSpriteSheet(file.path, spritePath, duration);
 
-    // Read sprite to get actual dimensions
-    const spriteStat = statSync(spritePath);
-    const actualHeight = Math.round(result.frameHeight * result.rows);
-
     const meta = {
       frameWidth: result.frameWidth,
-      frameHeight: Math.round(spriteStat.size > 0 ? result.frameHeight : result.frameHeight),
+      frameHeight: result.frameHeight,
       columns: result.columns,
       rows: result.rows,
       interval: result.interval,
       totalFrames: result.totalFrames,
-      spriteSize: spriteStat.size,
     };
 
     // Save metadata

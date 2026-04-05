@@ -1,12 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/index.js";
-import { jobs, files, nodeGraphs } from "../db/schema.js";
+import { jobs, files } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { statSync, mkdirSync, existsSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { runFfmpeg, generateThumbnail, ffprobe } from "./ffmpeg.js";
 import { buildFfmpegArgs } from "./operations.js";
-import { emitProgress, emitPipelineEvent } from "./progress.js";
+import { emitPipelineEvent } from "./progress.js";
 import crypto from "crypto";
 
 const CACHE_DIR = resolve(process.cwd(), "./data/cache");

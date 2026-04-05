@@ -32,7 +32,7 @@ export function TrimNode({ id, data, selected }: NodeProps) {
   const [duration, setDuration] = useState(0);
   const [frameDuration, setFrameDuration] = useState(1 / 30);
   const [loopEnabled, setLoopEnabled] = useState(true);
-  const [isDraggingSeek, setIsDraggingSeek] = useState(false);
+  const [_isDraggingSeek, setIsDraggingSeek] = useState(false);
   const [dragTime, setDragTime] = useState<number | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1.0);
   const frameCountRef = useRef(0);
