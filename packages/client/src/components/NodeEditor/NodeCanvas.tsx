@@ -326,6 +326,8 @@ function FlowInner({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
+        minZoom={0.1}
+        maxZoom={4}
         attributionPosition="bottom-left"
         defaultEdgeOptions={{
           animated: true,
