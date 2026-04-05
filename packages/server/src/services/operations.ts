@@ -137,11 +137,9 @@ export function buildFfmpegArgs(
     }
 
     case "resize": {
-      const scale = params.width
-        ? `scale=${params.width}:-2`
-        : params.height
-          ? `scale=-2:${params.height}`
-          : `scale=${params.scale}`;
+      const width = params.width ? String(params.width) : "-2";
+      const height = params.height ? String(params.height) : "-2";
+      const scale = `scale=${width}:${height}`;
       return [
         "-i",
         inputFiles[0],
