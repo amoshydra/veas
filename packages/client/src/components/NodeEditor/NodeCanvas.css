@@ -1,0 +1,21 @@
+/* Tailwind color mappings — update here if palette changes */
+.react-flow {
+  --rf-slate-200: #e2e8f0;
+  --rf-slate-600: #475569;
+  --rf-slate-700: #334155;
+  --rf-slate-800: #1e293b;
+
+  /* Controls */
+  --xy-controls-button-background-color-default: var(--rf-slate-800);
+  --xy-controls-button-background-color-hover-default: var(--rf-slate-700);
+  --xy-controls-button-color-default: var(--rf-slate-200);
+  --xy-controls-button-color-hover-default: var(--rf-slate-200);
+  --xy-controls-button-border-color-default: var(--rf-slate-700);
+  --xy-controls-box-shadow-default: 0 0 2px 1px rgba(0, 0, 0, 0.3);
+
+  /* Minimap & background */
+  --xy-minimap-background-color-default: var(--rf-slate-800);
+  --xy-background-pattern-dots-color-default: var(--rf-slate-600);
+  --xy-background-pattern-line-color-default: var(--rf-slate-700);
+  --xy-background-pattern-cross-color-default: var(--rf-slate-700);
+}
