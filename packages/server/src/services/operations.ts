@@ -254,18 +254,26 @@ export function buildFfmpegArgs(
     }
 
     case "rotate": {
-      const angle = params.angle || 90;
+      const angle = params.angle || 0;
       const transposeMap: Record<number, string> = {
+        0: null,
         90: "transpose=1",
         180: "transpose=2,transpose=2",
         270: "transpose=2",
       };
-      return ["-i", inputFiles[0], "-vf", transposeMap[angle] || "transpose=1", "-c:a", "copy"];
+      const filter = transposeMap[angle];
+      if (!filter) return ["-i", inputFiles[0], "-c", "copy"];
+      return ["-i", inputFiles[0], "-vf", filter, "-c:a", "copy"];
     }
 
     case "flip": {
-      const vf = params.direction === "vertical" ? "vflip" : "hflip";
-      return ["-i", inputFiles[0], "-vf", vf, "-c:a", "copy"];
+      const flipH = params.flipH ?? false;
+      const flipV = params.flipV ?? false;
+      const filters: string[] = [];
+      if (flipH) filters.push("hflip");
+      if (flipV) filters.push("vflip");
+      if (filters.length === 0) return ["-i", inputFiles[0], "-c", "copy"];
+      return ["-i", inputFiles[0], "-vf", filters.join(","), "-c:a", "copy"];
     }
 
     case "reverse": {

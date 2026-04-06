@@ -164,7 +164,8 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     category: "transform",
     inputs: [{ id: "video", type: "video", label: "Video" }],
     outputs: [{ id: "video", type: "video", label: "Video" }],
-    defaultConfig: { angle: 90 },
+    defaultConfig: { angle: 0 },
+    implemented: true,
   },
   flip: {
     type: "flip",
@@ -173,7 +174,8 @@ export const NODE_DEFINITIONS: Record<NodeType, NodeDefinition> = {
     category: "transform",
     inputs: [{ id: "video", type: "video", label: "Video" }],
     outputs: [{ id: "video", type: "video", label: "Video" }],
-    defaultConfig: { direction: "horizontal" },
+    defaultConfig: { flipH: false, flipV: false },
+    implemented: true,
   },
   concat: {
     type: "concat",

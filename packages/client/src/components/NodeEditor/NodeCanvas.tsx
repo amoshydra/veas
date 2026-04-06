@@ -32,6 +32,8 @@ import { CropNode } from "./nodes/CropNode.js";
 import { ResizeNode } from "./nodes/ResizeNode.js";
 import { TranscodeNode } from "./nodes/TranscodeNode.js";
 import { ConcatNode } from "./nodes/ConcatNode.js";
+import { RotateNode } from "./nodes/RotateNode.js";
+import { FlipNode } from "./nodes/FlipNode.js";
 import { ResizeHandle } from "./nodes/ResizeHandle.js";
 import { ConnectionHandle } from "./nodes/ConnectionHandle.js";
 import { HandlePalette } from "./HandlePalette.js";
@@ -150,8 +152,8 @@ const nodeTypes: NodeTypes = {
   concat: ConcatNode,
   filter: makeBaseNodeComponent("filter"),
   speed: makeBaseNodeComponent("speed"),
-  rotate: makeBaseNodeComponent("rotate"),
-  flip: makeBaseNodeComponent("flip"),
+  rotate: RotateNode,
+  flip: FlipNode,
   watermark: makeBaseNodeComponent("watermark"),
   pip: makeBaseNodeComponent("pip"),
   audioExtract: makeBaseNodeComponent("audioExtract"),
