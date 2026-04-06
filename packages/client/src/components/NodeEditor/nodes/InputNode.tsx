@@ -46,6 +46,7 @@ export function InputNode({ id, data, selected }: NodeProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const store = useNodeGraphStore();
   const [probe, setProbe] = useState<FileProbe | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const infoExpanded = config.infoExpanded !== false;
 
   useEffect(() => {
@@ -124,17 +125,23 @@ export function InputNode({ id, data, selected }: NodeProps) {
       fileId,
       filename: file?.filename || "Unknown",
     });
+    setUploadError(null);
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && onFileUpload) {
-      const uploaded = await onFileUpload(file);
-      if (uploaded?.id) {
-        store.updateNodeConfig(id, {
-          fileId: uploaded.id,
-          filename: file.name,
-        });
+      setUploadError(null);
+      try {
+        const uploaded = await onFileUpload(file);
+        if (uploaded?.id) {
+          store.updateNodeConfig(id, {
+            fileId: uploaded.id,
+            filename: file.name,
+          });
+        }
+      } catch (err) {
+        setUploadError("Upload failed. Please try again.");
       }
     }
   };
@@ -189,6 +196,8 @@ export function InputNode({ id, data, selected }: NodeProps) {
       </div>
 
       {error && <div className="px-3 py-2 text-xs text-red-400">{error}</div>}
+
+      {uploadError && <div className="px-3 py-2 text-xs text-red-400">{uploadError}</div>}
 
       <div className="nodrag cursor-default px-3 py-2 space-y-2">
         {hasFile && (
