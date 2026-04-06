@@ -98,7 +98,8 @@ export function buildFfmpegArgs(
     }
 
     case "concat": {
-      const scaleFilter = "scale='min(1280,iw)':min'(720,ih)':force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1";
+      const scaleFilter =
+        "scale='min(1280,iw)':min'(720,ih)':force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1";
       const filters: string[] = [];
       const videoInputs: string[] = [];
 
@@ -255,7 +256,7 @@ export function buildFfmpegArgs(
 
     case "rotate": {
       const angle = params.angle || 0;
-      const transposeMap: Record<number, string> = {
+      const transposeMap: Record<number, string | null> = {
         0: null,
         90: "transpose=1",
         180: "transpose=2,transpose=2",
