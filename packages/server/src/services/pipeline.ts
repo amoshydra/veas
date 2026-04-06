@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/index.js";
 import { jobs, files } from "../db/schema.js";
 import { eq } from "drizzle-orm";
-import { statSync, mkdirSync, existsSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
+import { statSync, mkdirSync, existsSync, readFileSync, writeFileSync, unlinkSync, renameSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { runFfmpeg, generateThumbnail, ffprobe } from "./ffmpeg.js";
 import { buildFfmpegArgs } from "./operations.js";
@@ -45,8 +45,26 @@ function getCachePath(sessionId: string, cacheKey: string): string {
   return `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
 }
 
+function getTempCachePath(sessionId: string, cacheKey: string): string {
+  return `${CACHE_DIR}/${sessionId}/_${cacheKey}.mp4`;
+}
+
+function finalizeCache(tempPath: string, finalPath: string): void {
+  const dir = dirname(finalPath);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  renameSync(tempPath, finalPath);
+}
+
+function cleanupTempCache(tempPath: string): void {
+  try {
+    if (existsSync(tempPath)) unlinkSync(tempPath);
+  } catch {
+    /* non-critical */
+  }
+}
+
 function getCacheLookup(sessionId: string, cacheKey: string): { hit: boolean; path: string } {
-  const cachePath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
+  const cachePath = getCachePath(sessionId, cacheKey);
   if (existsSync(cachePath)) {
     return { hit: true, path: cachePath };
   }
@@ -166,7 +184,8 @@ async function executeNode(
     }
 
     mkdirSync(`${CACHE_DIR}/${sessionId}`, { recursive: true });
-    const outputPath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
+    const finalPath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
+    const tempPath = getTempCachePath(sessionId, cacheKey);
     const listPath = `${CACHE_DIR}/${sessionId}/${jobId}_concat_list.txt`;
     const absInputPaths = inputFilePaths.map((p) =>
       p.startsWith("/") ? p : resolve(process.cwd(), p),
@@ -174,11 +193,18 @@ async function executeNode(
     const listContent = absInputPaths.map((p) => `file '${p}'`).join("\n");
     writeFileSync(listPath, listContent);
 
-    const args = buildFfmpegArgs(node.type, inputFilePaths, { ...params, listPath });
-    await runFfmpeg({ jobId, args, outputPath });
+    try {
+      const args = buildFfmpegArgs(node.type, inputFilePaths, { ...params, listPath });
+      await runFfmpeg({ jobId, args, outputPath: tempPath });
 
-    unlinkSync(listPath);
-    return outputPath;
+      finalizeCache(tempPath, finalPath);
+      return finalPath;
+    } catch (err) {
+      cleanupTempCache(tempPath);
+      throw err;
+    } finally {
+      try { unlinkSync(listPath); } catch { /* ignore */ }
+    }
   }
 
   const cacheKey = getCacheKey(node, inputFilePaths);
@@ -187,12 +213,20 @@ async function executeNode(
     return cached.path;
   }
 
-  const outputPath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
+  mkdirSync(`${CACHE_DIR}/${sessionId}`, { recursive: true });
+  const finalPath = `${CACHE_DIR}/${sessionId}/${cacheKey}.mp4`;
+  const tempPath = getTempCachePath(sessionId, cacheKey);
   const args = buildFfmpegArgs(node.type, inputFilePaths, params);
 
-  await runFfmpeg({ jobId, args, outputPath });
+  try {
+    await runFfmpeg({ jobId, args, outputPath: tempPath });
 
-  return outputPath;
+    finalizeCache(tempPath, finalPath);
+    return finalPath;
+  } catch (err) {
+    cleanupTempCache(tempPath);
+    throw err;
+  }
 }
 
 export async function executePipeline(
