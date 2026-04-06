@@ -1,11 +1,32 @@
 import { Position } from "@xyflow/react";
 import type { NodeProps } from "@xyflow/react";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNodeGraphStore } from "../../../stores/nodeGraph.js";
-import { useContextMenu } from "./useContextMenu.js";
 import { NodeContextMenu } from "./NodeContextMenu.js";
+import { useContextMenu } from "./useContextMenu.js";
 import { ResizeHandle } from "./ResizeHandle.js";
 import { ConnectionHandle } from "./ConnectionHandle.js";
+import type { FileProbe } from "../../../api/types.js";
+
+interface FfprobeResult {
+  format: {
+    filename: string;
+    duration: string;
+    size: string;
+    bit_rate: string;
+    format_name: string;
+  };
+  streams: Array<{
+    index: number;
+    codec_type: string;
+    codec_name: string;
+    width?: number;
+    height?: number;
+    r_frame_rate?: string;
+    bit_rate?: string;
+    duration?: string;
+  }>;
+}
 
 interface FileItem {
   id: string;
@@ -24,6 +45,67 @@ export function InputNode({ id, data, selected }: NodeProps) {
   const onFileUpload = data.onFileUpload as ((file: File) => Promise<any>) | undefined;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const store = useNodeGraphStore();
+  const [probe, setProbe] = useState<FileProbe | null>(null);
+  const infoExpanded = config.infoExpanded !== false;
+
+  useEffect(() => {
+    if (!config.fileId) {
+      setProbe(null);
+      return;
+    }
+    fetch(`/api/files/${config.fileId}/probe`)
+      .then((res) => res.json())
+      .then((data: FfprobeResult) => {
+        const videoStream = data.streams.find((s) => s.codec_type === "video");
+        const audioStream = data.streams.find((s) => s.codec_type === "audio");
+        const fpsStr = videoStream?.r_frame_rate;
+        let fps = 0;
+        if (fpsStr && fpsStr.includes("/")) {
+          const [num, den] = fpsStr.split("/").map(Number);
+          fps = den ? num / den : 0;
+        } else if (fpsStr) {
+          fps = parseFloat(fpsStr);
+        }
+        setProbe({
+          id: config.fileId,
+          filename: data.format.filename,
+          size: parseInt(data.format.size, 10) || 0,
+          mimeType: "",
+          duration: parseFloat(data.format.duration) || 0,
+          width: videoStream?.width || 0,
+          height: videoStream?.height || 0,
+          fps,
+          videoCodec: videoStream?.codec_name || "",
+          audioCodec: audioStream?.codec_name || "",
+          bitrate: parseInt(data.format.bit_rate, 10) || 0,
+        });
+      })
+      .catch(() => setProbe(null));
+  }, [config.fileId]);
+
+  function parseFps(fpsStr: string | null | undefined): string {
+    if (!fpsStr) return "N/A";
+    if (fpsStr.includes("/")) {
+      const [num, den] = fpsStr.split("/").map(Number);
+      return den ? (num / den).toFixed(2) : "N/A";
+    }
+    return parseFloat(fpsStr).toFixed(2);
+  }
+
+  function formatBitrate(bps: number | null | undefined): string {
+    if (!bps) return "N/A";
+    if (bps >= 1_000_000) return `${(bps / 1_000_000).toFixed(1)} Mbps`;
+    if (bps >= 1_000) return `${(bps / 1_000).toFixed(0)} Kbps`;
+    return `${bps} bps`;
+  }
+
+  function formatFileSize(bytes: number | null | undefined): string {
+    if (!bytes) return "N/A";
+    if (bytes >= 1_073_741_824) return `${(bytes / 1_073_741_824).toFixed(1)} GB`;
+    if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`;
+    if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${bytes} B`;
+  }
 
   const statusBorder =
     status === "completed"
@@ -117,6 +199,63 @@ export function InputNode({ id, data, selected }: NodeProps) {
             playsInline
             preload="metadata"
           />
+        )}
+
+        {hasFile && probe && (
+          <details
+            open={infoExpanded}
+            className="text-[10px] text-slate-400"
+            onToggle={(e) => {
+              const isOpen = (e.target as HTMLDetailsElement).open;
+              store.updateNodeConfig(id, { infoExpanded: isOpen });
+            }}
+          >
+            <summary className="cursor-pointer hover:text-slate-300 select-none">ℹ️ Info</summary>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mt-1 ml-1">
+              {probe.width && probe.height && (
+                <>
+                  <span>Resolution:</span>
+                  <span>{probe.width}×{probe.height}</span>
+                </>
+              )}
+              {probe.fps > 0 && (
+                <>
+                  <span>Frame rate:</span>
+                  <span>{parseFps(probe.fps.toString())} fps</span>
+                </>
+              )}
+              {probe.videoCodec && (
+                <>
+                  <span>Video:</span>
+                  <span>{probe.videoCodec}</span>
+                </>
+              )}
+              {probe.audioCodec && (
+                <>
+                  <span>Audio:</span>
+                  <span>{probe.audioCodec}</span>
+                </>
+              )}
+              {probe.bitrate > 0 && (
+                <>
+                  <span>Bitrate:</span>
+                  <span>{formatBitrate(probe.bitrate)}</span>
+                </>
+              )}
+              {probe.duration > 0 && (
+                <>
+                  <span>Duration:</span>
+                  <span>{probe.duration.toFixed(2)}s</span>
+                </>
+              )}
+              {probe.size > 0 && (
+                <>
+                  <span>Size:</span>
+                  <span>{formatFileSize(probe.size)}</span>
+                </>
+              )}
+            </div>
+          </details>
         )}
 
         <select
