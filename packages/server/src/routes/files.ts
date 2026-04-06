@@ -21,25 +21,31 @@ filesRoute.get("/", (c) => {
 });
 
 filesRoute.post("/upload", async (c) => {
+  console.log("[upload] Starting upload...");
   const body = await c.req.parseBody();
   const file = body["file"] as File;
   const sessionId = (body["sessionId"] as string) || "default";
 
   if (!file) return c.json({ error: "No file provided" }, 400);
 
+  console.log(`[upload] Received file: ${file.name}, size: ${file.size}, type: ${file.type}`);
+
   const id = uuidv4();
   const ext = extname(file.name) || ".mp4";
   const sessionDir = join(UPLOAD_DIR, sessionId);
   mkdirSync(sessionDir, { recursive: true });
   const filePath = join(sessionDir, `${id}${ext}`);
+  console.log(`[upload] Saving to: ${filePath}`);
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
+  console.log(`[upload] Buffer created, size: ${buffer.length}`);
   const ws = createWriteStream(filePath);
   ws.write(buffer);
   ws.end();
 
   await new Promise<void>((resolve) => ws.on("finish", resolve));
+  console.log("[upload] File written to disk");
 
   let duration: number | undefined;
   let width: number | undefined;

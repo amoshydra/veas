@@ -130,17 +130,23 @@ export function InputNode({ id, data, selected }: NodeProps) {
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log("[InputNode] Upload started:", file?.name, file?.size);
     if (file && onFileUpload) {
       setUploadError(null);
       try {
+        console.log("[InputNode] Calling onFileUpload...");
         const uploaded = await onFileUpload(file);
+        console.log("[InputNode] Upload result:", uploaded);
         if (uploaded?.id) {
           store.updateNodeConfig(id, {
             fileId: uploaded.id,
             filename: file.name,
           });
+        } else {
+          console.warn("[InputNode] No id in upload result:", uploaded);
         }
       } catch (err) {
+        console.error("[InputNode] Upload error:", err);
         setUploadError("Upload failed. Please try again.");
       }
     }
