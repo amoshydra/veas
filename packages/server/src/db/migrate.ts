@@ -13,7 +13,7 @@ sqlite.exec(`
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
     owner_id TEXT NOT NULL,
-    name TEXT NOT NULL DEFAULT 'Untitled',
+    name TEXT NOT NULL DEFAULT '__UNNAMED__',
     state TEXT DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))

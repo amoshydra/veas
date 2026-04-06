@@ -124,7 +124,7 @@ pipelinesRoute.post("/save", async (c) => {
     .values({
       id,
       sessionId,
-      name: name || "Untitled",
+      name: name || "__UNNAMED__",
       nodes: JSON.stringify(nodes || []),
       connections: JSON.stringify(connections || []),
       viewport: JSON.stringify(viewport || {}),

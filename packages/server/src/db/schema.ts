@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 export const sessions = sqliteTable("sessions", {
   id: text("id").primaryKey(),
   ownerId: text("owner_id").notNull(),
-  name: text("name").notNull().default("Untitled"),
+  name: text("name").notNull().default("__UNNAMED__"),
   state: text("state").default("{}"),
   createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
@@ -48,7 +48,7 @@ export const nodeGraphs = sqliteTable("node_graphs", {
   sessionId: text("session_id")
     .notNull()
     .references(() => sessions.id, { onDelete: "cascade" }),
-  name: text("name").notNull().default("Untitled"),
+  name: text("name").notNull().default("__UNNAMED__"),
   nodes: text("nodes").notNull().default("[]"),
   connections: text("connections").notNull().default("[]"),
   viewport: text("viewport").notNull().default("{}"),

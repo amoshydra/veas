@@ -88,7 +88,7 @@ export const handlers = [
     const body = (await request.json()) as Record<string, unknown>;
     const session = {
       id: crypto.randomUUID(),
-      name: (body.name as string) || "New Project",
+      name: (body.name as string) || "__UNNAMED__",
       ownerId: (body.ownerId as string) || "demo-owner",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

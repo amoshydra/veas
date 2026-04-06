@@ -16,7 +16,7 @@ sqlite.exec(`
   CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
     owner_id TEXT NOT NULL,
-    name TEXT NOT NULL DEFAULT 'Untitled',
+    name TEXT NOT NULL DEFAULT '__UNNAMED__',
     state TEXT DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -54,7 +54,7 @@ sqlite.exec(`
   CREATE TABLE IF NOT EXISTS node_graphs (
     id TEXT PRIMARY KEY,
     session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
-    name TEXT NOT NULL DEFAULT 'Untitled',
+    name TEXT NOT NULL DEFAULT '__UNNAMED__',
     nodes TEXT NOT NULL DEFAULT '[]',
     connections TEXT NOT NULL DEFAULT '[]',
     viewport TEXT NOT NULL DEFAULT '{}',

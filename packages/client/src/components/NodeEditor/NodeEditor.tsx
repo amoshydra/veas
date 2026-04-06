@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../../api/client.js";
@@ -19,6 +19,11 @@ interface FileItem {
   size: number;
 }
 
+interface Session {
+  id: string;
+  name: string;
+}
+
 export default function NodeEditor() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const queryClient = useQueryClient();
@@ -28,6 +33,8 @@ export default function NodeEditor() {
   const [executionError, setExecutionError] = useState<string | null>(null);
   const [showMinimap, setShowMinimap] = useState(true);
   const [isAddNodeModalOpen, setIsAddNodeModalOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
 
   useEffect(() => {
     if (sessionId) {
@@ -53,6 +60,23 @@ export default function NodeEditor() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const { data: sessionData } = useQuery({
+    queryKey: ["session", sessionId],
+    queryFn: () => api.getSession(sessionId!),
+    enabled: !!sessionId,
+  });
+
+  const session = sessionData as Session | undefined;
+
+  const renameMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => api.updateSession(id, { name }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      setIsRenaming(false);
+    },
+  });
 
   const { data: filesData, isLoading: filesLoading } = useQuery({
     queryKey: ["files", sessionId],
@@ -218,6 +242,17 @@ export default function NodeEditor() {
     setDeleteConfirm(null);
   }, [store]);
 
+  const handleStartRename = () => {
+    setRenameValue(session?.name || "");
+    setIsRenaming(true);
+  };
+
+  const handleRename = () => {
+    if (sessionId && renameValue.trim()) {
+      renameMutation.mutate({ id: sessionId, name: renameValue.trim() });
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       <header className="flex items-center justify-between p-3 border-b border-slate-700 bg-slate-900">
@@ -228,7 +263,27 @@ export default function NodeEditor() {
           >
             Back
           </a>
-          <h1 className="font-bold text-sm">Node Editor</h1>
+          {isRenaming ? (
+            <input
+              type="text"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRename();
+                if (e.key === "Escape") setIsRenaming(false);
+              }}
+              onBlur={handleRename}
+              className="px-2 py-1 text-sm bg-slate-800 border border-blue-500 rounded text-white focus:outline-none"
+              autoFocus
+            />
+          ) : (
+            <button
+              onClick={handleStartRename}
+              className="font-bold text-sm hover:text-blue-400 transition-colors"
+            >
+              {session?.name && session.name !== "__UNNAMED__" ? session.name : "Untitled"}
+            </button>
+          )}
           <span className="text-xs text-slate-500">{sessionId?.slice(0, 8)}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -275,7 +330,11 @@ export default function NodeEditor() {
           sessionId={sessionId!}
           files={files}
           showMinimap={showMinimap}
-          onFileUpload={async (file: File, onProgress?: (p: number) => void, onAbort?: () => void) => {
+          onFileUpload={async (
+            file: File,
+            onProgress?: (p: number) => void,
+            onAbort?: () => void,
+          ) => {
             if (sessionId) {
               const uploaded = await api.uploadFile(sessionId, file, onProgress, onAbort);
               queryClient.invalidateQueries({ queryKey: ["files", sessionId] });
@@ -295,7 +354,11 @@ export default function NodeEditor() {
 
       {/* Add Node Modal */}
       {isAddNodeModalOpen && (
-        <BottomSheet isOpen={isAddNodeModalOpen} onClose={() => setIsAddNodeModalOpen(false)} title="Add Node">
+        <BottomSheet
+          isOpen={isAddNodeModalOpen}
+          onClose={() => setIsAddNodeModalOpen(false)}
+          title="Add Node"
+        >
           <AddNodeModalContent
             onSelect={(type: NodeType) => {
               const def = NODE_DEFINITIONS[type];
@@ -369,11 +432,7 @@ export default function NodeEditor() {
   );
 }
 
-function AddNodeModalContent({
-  onSelect,
-}: {
-  onSelect: (type: NodeType) => void;
-}) {
+function AddNodeModalContent({ onSelect }: { onSelect: (type: NodeType) => void }) {
   const categories: NodeCategory[] = ["input-output", "transform", "filter", "audio", "advanced"];
   const [expandedCategory, setExpandedCategory] = useState<NodeCategory | null>("input-output");
 

@@ -2,11 +2,12 @@ import { Hono } from "hono";
 import { v4 as uuidv4 } from "uuid";
 import { createWriteStream, statSync, createReadStream, existsSync, rmSync } from "node:fs";
 import { mkdirSync } from "node:fs";
-import { join, extname } from "node:path";
+import { join, extname, basename } from "node:path";
 import { db } from "../db/index.js";
-import { files } from "../db/schema.js";
+import { files, sessions } from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import { ffprobe } from "../services/ffmpeg.js";
+import { generateUniqueName } from "../services/session.js";
 
 const filesRoute = new Hono();
 
@@ -29,6 +30,22 @@ filesRoute.post("/upload", async (c) => {
   if (!file) return c.json({ error: "No file provided" }, 400);
 
   console.log(`[upload] Received file: ${file.name}, size: ${file.size}, type: ${file.type}`);
+
+  const ownerId = c.req.header("x-owner-id") || "anonymous";
+  const session = db.select().from(sessions).where(eq(sessions.id, sessionId)).get();
+
+  if (session && session.name === "__UNNAMED__") {
+    const existingFiles = db.select().from(files).where(eq(files.sessionId, sessionId)).all();
+    if (existingFiles.length === 0) {
+      const baseName = basename(file.name, extname(file.name));
+      const uniqueName = generateUniqueName(ownerId, baseName);
+      db.update(sessions)
+        .set({ name: uniqueName, updatedAt: new Date().toISOString() })
+        .where(eq(sessions.id, sessionId))
+        .run();
+      console.log(`[upload] Auto-named session to: ${uniqueName}`);
+    }
+  }
 
   const id = uuidv4();
   const ext = extname(file.name) || ".mp4";
