@@ -160,6 +160,9 @@ export function InputNode({ id, data, selected }: NodeProps) {
             fileId: uploaded.id,
             filename: file.name,
           });
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
         } else {
           console.warn("[InputNode] No id in upload result:", uploaded);
         }
@@ -168,6 +171,9 @@ export function InputNode({ id, data, selected }: NodeProps) {
         setUploadProgress(null);
         setUploadSize(null);
         setUploadError("Upload failed. Please try again.");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       }
     }
   };
@@ -178,6 +184,9 @@ export function InputNode({ id, data, selected }: NodeProps) {
       setUploadProgress(null);
       setUploadSize(null);
       setUploadError(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
