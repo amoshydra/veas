@@ -320,18 +320,13 @@ export function buildFfmpegArgs(
 
     case "output":
     case "fileOutput": {
-      const _format = params.format || "mp4";
       return [
         "-i",
         inputFiles[0],
         "-c:v",
-        "libx264",
-        "-crf",
-        String(params.quality ?? 23),
-        "-preset",
-        "medium",
+        "copy",
         "-c:a",
-        "aac",
+        "copy",
       ];
     }
 

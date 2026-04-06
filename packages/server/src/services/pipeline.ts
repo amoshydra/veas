@@ -320,6 +320,13 @@ export async function executePipeline(
       try {
         db.update(jobs).set({ status: "processing", progress: 0 }).where(eq(jobs.id, jobId)).run();
 
+        emitPipelineEvent({
+          type: "nodeStart",
+          pipelineId: pid,
+          nodeId: node.id,
+          status: "processing",
+        });
+
         const outputPath = await executeNode(node, inputFilePaths, node.config, sessionId, jobId);
 
         const fileId = uuidv4();
@@ -425,6 +432,13 @@ export async function executePipeline(
 
     try {
       db.update(jobs).set({ status: "processing", progress: 0 }).where(eq(jobs.id, jobId)).run();
+
+      emitPipelineEvent({
+        type: "nodeStart",
+        pipelineId: pid,
+        nodeId: node.id,
+        status: "processing",
+      });
 
       const outputPath = await executeNode(node, inputFilePaths, node.config, sessionId, jobId);
 

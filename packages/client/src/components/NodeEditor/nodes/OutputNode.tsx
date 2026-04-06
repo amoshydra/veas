@@ -22,7 +22,7 @@ export function OutputNode({ id, data, selected }: NodeProps) {
           ? "border-red-500"
           : "border-slate-600";
 
-  const hasOutput = status === "completed" && outputId;
+  const hasOutput = outputId;
 
   const updateConfig = (updates: Record<string, any>) => {
     store.updateNodeConfig(id, updates);

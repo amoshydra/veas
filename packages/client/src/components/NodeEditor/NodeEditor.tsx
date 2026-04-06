@@ -181,15 +181,14 @@ export default function NodeEditor() {
           queryClient.invalidateQueries({ queryKey: ["jobs", sessionId] });
         };
 
+        eventSource.addEventListener("nodeStart", (e: MessageEvent) => {
+          const data = JSON.parse(e.data);
+          store.updateNodeStatus(data.nodeId, "processing");
+        });
+
         eventSource.addEventListener("nodeComplete", (e: MessageEvent) => {
           const data = JSON.parse(e.data);
-          store.updateNodeStatus(
-            data.nodeId,
-            data.status,
-            data.outputFile,
-            undefined,
-            data.cachePath,
-          );
+          store.updateNodeStatus(data.nodeId, "idle", data.outputFile, undefined, data.cachePath);
           completedCount++;
           if (completedCount >= totalNodes) {
             finishExecution();
