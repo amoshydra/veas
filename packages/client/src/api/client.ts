@@ -74,15 +74,32 @@ export class RealApiClient {
     return res.json();
   }
 
-  async uploadFile(sessionId: string, file: File) {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("sessionId", sessionId);
-    const res = await fetch(`${_baseUrl}/files/upload`, {
-      method: "POST",
-      body: formData,
+  async uploadFile(
+    sessionId: string,
+    file: File,
+    onProgress?: (progress: number) => void,
+  ) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${_baseUrl}/files/upload`);
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          reject(new Error(`Upload failed: ${xhr.status}`));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Upload failed"));
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("sessionId", sessionId);
+      xhr.send(formData);
     });
-    return res.json();
   }
 
   async listFiles(sessionId: string) {

@@ -42,11 +42,12 @@ export function InputNode({ id, data, selected }: NodeProps) {
   const status = data.status as string;
   const error = data.error as string | undefined;
   const files = (data.files || []) as FileItem[];
-  const onFileUpload = data.onFileUpload as ((file: File) => Promise<any>) | undefined;
+  const onFileUpload = data.onFileUpload as ((file: File, onProgress?: (p: number) => void) => Promise<any>) | undefined;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const store = useNodeGraphStore();
   const [probe, setProbe] = useState<FileProbe | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const infoExpanded = config.infoExpanded !== false;
 
   useEffect(() => {
@@ -133,10 +134,15 @@ export function InputNode({ id, data, selected }: NodeProps) {
     console.log("[InputNode] Upload started:", file?.name, file?.size);
     if (file && onFileUpload) {
       setUploadError(null);
+      setUploadProgress(0);
       try {
         console.log("[InputNode] Calling onFileUpload...");
-        const uploaded = await onFileUpload(file);
+        const uploaded = await onFileUpload(file, (p) => {
+          console.log("[InputNode] Progress:", p);
+          setUploadProgress(p);
+        });
         console.log("[InputNode] Upload result:", uploaded);
+        setUploadProgress(null);
         if (uploaded?.id) {
           store.updateNodeConfig(id, {
             fileId: uploaded.id,
@@ -147,6 +153,7 @@ export function InputNode({ id, data, selected }: NodeProps) {
         }
       } catch (err) {
         console.error("[InputNode] Upload error:", err);
+        setUploadProgress(null);
         setUploadError("Upload failed. Please try again.");
       }
     }
@@ -306,15 +313,41 @@ export function InputNode({ id, data, selected }: NodeProps) {
           className="hidden"
           onChange={handleUpload}
         />
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            fileInputRef.current?.click();
-          }}
-          className="w-full px-2 py-1.5 border border-dashed border-slate-600 rounded text-xs text-slate-400 hover:border-slate-500 hover:bg-slate-700/50 transition-colors"
-        >
-          📁 Upload new file
-        </button>
+
+        {uploadProgress !== null ? (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span>Uploading...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-2">
+              <div
+                className="bg-blue-500 h-2 rounded-full transition-all"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-700"></div>
+              </div>
+              <div className="relative flex justify-center text-[10px]">
+                <span className="bg-slate-800 px-2 text-slate-500">or</span>
+              </div>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+              className="w-full px-2 py-1.5 border border-dashed border-slate-600 rounded text-xs text-slate-400 hover:border-slate-500 hover:bg-slate-700/50 transition-colors"
+            >
+              📁 Upload new file
+            </button>
+          </>
+        )}
 
         {hasFile && (
           <div className="text-[10px] text-slate-500 truncate">
