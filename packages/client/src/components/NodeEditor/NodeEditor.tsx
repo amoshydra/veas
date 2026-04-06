@@ -3,8 +3,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../../api/client.js";
 import { useNodeGraphStore } from "../../stores/nodeGraph.js";
+import { NODE_DEFINITIONS, NODE_CATEGORIES } from "../../types/nodeGraph.js";
+import type { NodeType, NodeCategory } from "../../types/nodeGraph.js";
 import NodeCanvas from "./NodeCanvas.js";
-import NodePalette from "./NodePalette.js";
+import BottomSheet from "../ui/BottomSheet.js";
 
 const IS_DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
 
@@ -24,6 +26,8 @@ export default function NodeEditor() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [executionError, setExecutionError] = useState<string | null>(null);
+  const [showMinimap, setShowMinimap] = useState(true);
+  const [isAddNodeModalOpen, setIsAddNodeModalOpen] = useState(false);
 
   useEffect(() => {
     if (sessionId) {
@@ -39,6 +43,16 @@ export default function NodeEditor() {
         .catch((err: unknown) => console.error("[NodeEditor] Error loading graph:", err));
     }
   }, [sessionId]);
+
+  useEffect(() => {
+    setShowMinimap(window.innerWidth >= 768);
+
+    const handleResize = () => {
+      setShowMinimap(window.innerWidth >= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const { data: filesData, isLoading: filesLoading } = useQuery({
     queryKey: ["files", sessionId],
@@ -227,6 +241,14 @@ export default function NodeEditor() {
             </button>
           )}
           <button
+            onClick={() => setShowMinimap(!showMinimap)}
+            className={`px-3 py-1.5 text-xs rounded transition-colors ${
+              showMinimap ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300"
+            }`}
+          >
+            📍
+          </button>
+          <button
             onClick={handleExecuteAll}
             disabled={isExecuting || store.nodes.length === 0}
             className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 rounded font-medium transition-colors"
@@ -249,11 +271,10 @@ export default function NodeEditor() {
       )}
 
       <div className="flex-1 flex overflow-hidden">
-        <NodePalette />
-
         <NodeCanvas
           sessionId={sessionId!}
           files={files}
+          showMinimap={showMinimap}
           onFileUpload={async (file: File) => {
             if (sessionId) {
               const uploaded = await api.uploadFile(sessionId, file);
@@ -263,6 +284,37 @@ export default function NodeEditor() {
           }}
         />
       </div>
+
+      {/* FAB */}
+      <button
+        onClick={() => setIsAddNodeModalOpen(true)}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-500 rounded-full shadow-lg flex items-center justify-center text-2xl text-white transition-colors z-40"
+      >
+        +
+      </button>
+
+      {/* Add Node Modal */}
+      {isAddNodeModalOpen && (
+        <BottomSheet isOpen={isAddNodeModalOpen} onClose={() => setIsAddNodeModalOpen(false)} title="Add Node">
+          <AddNodeModalContent
+            onSelect={(type: NodeType) => {
+              const def = NODE_DEFINITIONS[type];
+              if (!def) return;
+              store.addNode({
+                id: crypto.randomUUID(),
+                type,
+                position: { x: 200 + Math.random() * 200, y: 100 + Math.random() * 200 },
+                data: {
+                  config: { ...def.defaultConfig },
+                  status: "idle" as const,
+                  definition: def,
+                },
+              });
+              setIsAddNodeModalOpen(false);
+            }}
+          />
+        </BottomSheet>
+      )}
 
       {/* Upload area when no files */}
       {files.length === 0 && !filesLoading && (
@@ -313,6 +365,55 @@ export default function NodeEditor() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function AddNodeModalContent({
+  onSelect,
+}: {
+  onSelect: (type: NodeType) => void;
+}) {
+  const categories: NodeCategory[] = ["input-output", "transform", "filter", "audio", "advanced"];
+  const [expandedCategory, setExpandedCategory] = useState<NodeCategory | null>("input-output");
+
+  return (
+    <div className="space-y-2">
+      {categories.map((cat) => (
+        <div key={cat}>
+          <button
+            onClick={() => setExpandedCategory(expandedCategory === cat ? null : cat)}
+            className="w-full px-3 py-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider hover:bg-slate-700 flex items-center justify-between"
+          >
+            <span>{NODE_CATEGORIES[cat]}</span>
+            <span className="text-slate-600">{expandedCategory === cat ? "▼" : "▶"}</span>
+          </button>
+          {expandedCategory === cat && (
+            <div className="px-2 pb-2 space-y-1">
+              {Object.values(NODE_DEFINITIONS)
+                .filter((def) => def.category === cat)
+                .map((def) => (
+                  <button
+                    key={def.type}
+                    onClick={() => def.implemented && onSelect(def.type)}
+                    disabled={!def.implemented}
+                    className={`w-full px-2 py-1.5 text-left text-sm rounded flex items-center gap-2 transition-colors ${
+                      def.implemented
+                        ? "text-slate-300 hover:bg-slate-700"
+                        : "text-slate-500 cursor-not-allowed opacity-50"
+                    }`}
+                  >
+                    <span>{def.icon}</span>
+                    <span>{def.label}</span>
+                    {!def.implemented && (
+                      <span className="text-[10px] text-slate-600 ml-auto">soon</span>
+                    )}
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

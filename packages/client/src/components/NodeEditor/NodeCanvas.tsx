@@ -23,8 +23,8 @@ import {
   type GraphEdge,
   type NodeGraphState,
 } from "../../stores/nodeGraph.js";
-import { NODE_DEFINITIONS } from "../../types/nodeGraph.js";
-import type { NodeType } from "../../types/nodeGraph.js";
+import { NODE_DEFINITIONS, NODE_CATEGORIES } from "../../types/nodeGraph.js";
+import type { NodeType, NodeCategory } from "../../types/nodeGraph.js";
 import { InputNode } from "./nodes/InputNode.js";
 import { OutputNode } from "./nodes/OutputNode.js";
 import { TrimNode } from "./nodes/TrimNode.js";
@@ -35,6 +35,8 @@ import { ConcatNode } from "./nodes/ConcatNode.js";
 import { ResizeHandle } from "./nodes/ResizeHandle.js";
 import { ConnectionHandle } from "./nodes/ConnectionHandle.js";
 import { HandlePalette } from "./HandlePalette.js";
+import BottomSheet from "../ui/BottomSheet.js";
+import { v4 as uuidv4 } from "uuid";
 import { Position } from "@xyflow/react";
 
 function makeBaseNodeComponent(type: keyof typeof NODE_DEFINITIONS) {
@@ -201,6 +203,7 @@ interface NodeCanvasProps {
   sessionId: string;
   files: FileItem[];
   onFileUpload: (file: File) => Promise<any>;
+  showMinimap: boolean;
 }
 
 interface HandlePaletteState {
@@ -223,7 +226,7 @@ interface FlowInnerDataProps {
   onConnect: (params: Connection) => void;
   onConnectStart: (_event: any, params: any) => void;
   onNodeClick: (_event: React.MouseEvent, node: Node) => void;
-  onPaneClick: () => void;
+  onPaneClick: (event: React.MouseEvent | React.TouchEvent) => void;
   onNodeDragStop: (_event: React.MouseEvent, node: Node) => void;
   onNodesDelete: (deletedNodes: Node[]) => void;
   onEdgesDelete: (deletedEdges: Edge[]) => void;
@@ -240,6 +243,7 @@ interface FlowInnerDataProps {
     targetNodeId?: string;
     targetHandleId?: string;
   } | null>;
+  showMinimap: boolean;
 }
 
 function FlowWithProvider(props: FlowInnerDataProps) {
@@ -267,6 +271,7 @@ function FlowInner({
   store,
   storeEdges,
   pendingConnectionRef,
+  showMinimap,
 }: FlowInnerDataProps) {
   const { screenToFlowPosition } = useReactFlow();
   const handlePaletteRef = useRef(handlePalette);
@@ -298,13 +303,16 @@ function FlowInner({
     [setHandlePalette, pendingConnectionRef],
   );
 
-  const handlePaneClick = useCallback(() => {
-    if (justEndedConnection.current) {
-      justEndedConnection.current = false;
-      return;
-    }
-    onPaneClick();
-  }, [onPaneClick]);
+  const handlePaneClick = useCallback(
+    (event: React.MouseEvent | React.TouchEvent) => {
+      if (justEndedConnection.current) {
+        justEndedConnection.current = false;
+        return;
+      }
+      onPaneClick(event);
+    },
+    [onPaneClick],
+  );
 
   const handlePaletteSelect = useCallback(
     (nodeType: NodeType) => {
@@ -393,11 +401,13 @@ function FlowInner({
           size={1}
         />
         <Controls className="!bg-slate-800 !border-slate-700 !shadow-lg" />
-        <MiniMap
-          nodeColor={() => "#3b82f6"}
-          className="!bg-slate-800 !border-slate-700"
-          maskColor="rgba(0,0,0,0.5)"
-        />
+        {showMinimap && (
+          <MiniMap
+            nodeColor={() => "#3b82f6"}
+            className="!bg-slate-800 !border-slate-700"
+            maskColor="rgba(0,0,0,0.5)"
+          />
+        )}
       </ReactFlow>
       {handlePalette && (
         <HandlePalette
@@ -419,16 +429,20 @@ function FlowContent({
   onFileUpload,
   storeNodes,
   storeEdges,
+  showMinimap,
 }: {
   sessionId: string;
   files: FileItem[];
   onFileUpload: (file: File) => Promise<any>;
   storeNodes: GraphNode[];
   storeEdges: GraphEdge[];
+  showMinimap: boolean;
 }) {
   const store = useNodeGraphStore();
 
   const [handlePalette, setHandlePalette] = useState<HandlePaletteState | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTapTimeRef = useRef<number>(0);
   const pendingConnectionRef = useRef<{
     portType: "video" | "audio" | "image";
     direction: "source" | "target";
@@ -613,10 +627,22 @@ function FlowContent({
     [store],
   );
 
-  const onPaneClick = useCallback(() => {
-    store.selectNode(null);
-    setHandlePalette(null);
-  }, [store]);
+  const onPaneClick = useCallback(
+    (_event: React.MouseEvent | React.TouchEvent) => {
+      store.selectNode(null);
+      setHandlePalette(null);
+    },
+    [store],
+  );
+
+  const handlePaneContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      store.selectNode(null);
+      setHandlePalette(null);
+    },
+    [store],
+  );
 
   const onNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: Node) => {
@@ -676,11 +702,12 @@ function FlowContent({
       store={store}
       storeEdges={storeEdges}
       pendingConnectionRef={pendingConnectionRef}
+      showMinimap={showMinimap}
     />
   );
 }
 
-export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanvasProps) {
+export default function NodeCanvas({ sessionId, files, onFileUpload, showMinimap }: NodeCanvasProps) {
   const store = useNodeGraphStore();
   const storeNodes = store.nodes;
   const storeEdges = store.edges;
@@ -693,6 +720,7 @@ export default function NodeCanvas({ sessionId, files, onFileUpload }: NodeCanva
         onFileUpload={onFileUpload}
         storeNodes={storeNodes}
         storeEdges={storeEdges}
+        showMinimap={showMinimap}
       />
     </div>
   );
