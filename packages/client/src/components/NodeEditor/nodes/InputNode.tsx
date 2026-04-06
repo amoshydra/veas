@@ -311,22 +311,24 @@ export function InputNode({ id, data, selected }: NodeProps) {
           </details>
         )}
 
-        <select
-          value={config.fileId || ""}
-          onChange={(e) => handleFileSelect(e.target.value)}
-          className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <option value="">Select a file...</option>
-          {files.map((f) => (
-            <option
-              key={f.id}
-              value={f.id}
-            >
-              {f.filename} {f.duration ? `(${f.duration.toFixed(1)}s)` : ""}
-            </option>
-          ))}
-        </select>
+        {uploadProgress === null && (
+          <select
+            value={config.fileId || ""}
+            onChange={(e) => handleFileSelect(e.target.value)}
+            className="w-full px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <option value="">Select a file...</option>
+            {files.map((f) => (
+              <option
+                key={f.id}
+                value={f.id}
+              >
+                {f.filename} {f.duration ? `(${f.duration.toFixed(1)}s)` : ""}
+              </option>
+            ))}
+          </select>
+        )}
 
         <input
           ref={fileInputRef}
