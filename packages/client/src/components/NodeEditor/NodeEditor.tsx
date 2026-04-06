@@ -275,9 +275,9 @@ export default function NodeEditor() {
           sessionId={sessionId!}
           files={files}
           showMinimap={showMinimap}
-          onFileUpload={async (file: File, onProgress?: (p: number) => void) => {
+          onFileUpload={async (file: File, onProgress?: (p: number) => void, onAbort?: () => void) => {
             if (sessionId) {
-              const uploaded = await api.uploadFile(sessionId, file, onProgress);
+              const uploaded = await api.uploadFile(sessionId, file, onProgress, onAbort);
               queryClient.invalidateQueries({ queryKey: ["files", sessionId] });
               return uploaded;
             }

@@ -42,12 +42,14 @@ export function InputNode({ id, data, selected }: NodeProps) {
   const status = data.status as string;
   const error = data.error as string | undefined;
   const files = (data.files || []) as FileItem[];
-  const onFileUpload = data.onFileUpload as ((file: File, onProgress?: (p: number) => void) => Promise<any>) | undefined;
+  const onFileUpload = data.onFileUpload as ((file: File, onProgress?: (p: number, loaded: number, total: number) => void, onAbort?: (abort: () => void) => void) => Promise<any>) | undefined;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const store = useNodeGraphStore();
   const [probe, setProbe] = useState<FileProbe | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadSize, setUploadSize] = useState<{ loaded: number; total: number } | null>(null);
+  const abortRef = useRef<(() => void) | null>(null);
   const infoExpanded = config.infoExpanded !== false;
 
   useEffect(() => {
@@ -135,14 +137,24 @@ export function InputNode({ id, data, selected }: NodeProps) {
     if (file && onFileUpload) {
       setUploadError(null);
       setUploadProgress(0);
+      setUploadSize({ loaded: 0, total: file.size });
+      abortRef.current = null;
       try {
         console.log("[InputNode] Calling onFileUpload...");
-        const uploaded = await onFileUpload(file, (p) => {
-          console.log("[InputNode] Progress:", p);
-          setUploadProgress(p);
-        });
+        const uploaded = await onFileUpload(
+          file,
+          (p: number, loaded: number, total: number) => {
+            console.log("[InputNode] Progress:", p);
+            setUploadProgress(p);
+            setUploadSize({ loaded, total });
+          },
+          (abort: () => void) => {
+            abortRef.current = abort;
+          },
+        );
         console.log("[InputNode] Upload result:", uploaded);
         setUploadProgress(null);
+        setUploadSize(null);
         if (uploaded?.id) {
           store.updateNodeConfig(id, {
             fileId: uploaded.id,
@@ -154,8 +166,18 @@ export function InputNode({ id, data, selected }: NodeProps) {
       } catch (err) {
         console.error("[InputNode] Upload error:", err);
         setUploadProgress(null);
+        setUploadSize(null);
         setUploadError("Upload failed. Please try again.");
       }
+    }
+  };
+
+  const handleCancel = () => {
+    if (abortRef.current) {
+      abortRef.current();
+      setUploadProgress(null);
+      setUploadSize(null);
+      setUploadError(null);
     }
   };
 
@@ -297,15 +319,6 @@ export function InputNode({ id, data, selected }: NodeProps) {
           ))}
         </select>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-700"></div>
-          </div>
-          <div className="relative flex justify-center text-[10px]">
-            <span className="bg-slate-800 px-2 text-slate-500">or</span>
-          </div>
-        </div>
-
         <input
           ref={fileInputRef}
           type="file"
@@ -317,8 +330,16 @@ export function InputNode({ id, data, selected }: NodeProps) {
         {uploadProgress !== null ? (
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs text-slate-400">
-              <span>Uploading...</span>
-              <span>{uploadProgress}%</span>
+              <span>Uploading</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCancel();
+                }}
+                className="text-red-400 hover:text-red-300"
+              >
+                ✕
+              </button>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2">
               <div
@@ -326,6 +347,11 @@ export function InputNode({ id, data, selected }: NodeProps) {
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
+            {uploadSize && (
+              <div className="text-[10px] text-slate-500 text-center">
+                {formatFileSize(uploadSize.loaded)} / {formatFileSize(uploadSize.total)}
+              </div>
+            )}
           </div>
         ) : (
           <>

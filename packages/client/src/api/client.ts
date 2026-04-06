@@ -77,7 +77,8 @@ export class RealApiClient {
   async uploadFile(
     sessionId: string,
     file: File,
-    onProgress?: (progress: number) => void,
+    onProgress?: (progress: number, loaded: number, total: number) => void,
+    onAbort?: (abort: () => void) => void,
   ) {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -92,13 +93,14 @@ export class RealApiClient {
       xhr.onerror = () => reject(new Error("Upload failed"));
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable && onProgress) {
-          onProgress(Math.round((e.loaded / e.total) * 100));
+          onProgress(Math.round((e.loaded / e.total) * 100), e.loaded, e.total);
         }
       };
       const formData = new FormData();
       formData.append("file", file);
       formData.append("sessionId", sessionId);
       xhr.send(formData);
+      if (onAbort) onAbort(() => xhr.abort());
     });
   }
 
