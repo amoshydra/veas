@@ -7,6 +7,7 @@ import { useContextMenu } from "./useContextMenu.js";
 import { NodeContextMenu } from "./NodeContextMenu.js";
 import { ResizeHandle } from "./ResizeHandle.js";
 import { ConnectionHandle } from "./ConnectionHandle.js";
+import { resolvePreviewSource } from "../../../utils/preview.js";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -43,7 +44,7 @@ export function TrimNode({ id, data, selected }: NodeProps) {
 
   const store = useNodeGraphStore();
 
-  const fileId = config.fileId as string | undefined;
+  const { fileId, isReady } = resolvePreviewSource(id, store.nodes, store.edges);
 
   const statusBorder =
     status === "completed"
@@ -54,7 +55,7 @@ export function TrimNode({ id, data, selected }: NodeProps) {
           ? "border-red-500"
           : "border-slate-600";
 
-  const hasFile = !!fileId;
+  const hasFile = isReady && !!fileId;
 
   const start = config.start ?? 0;
   const end = config.end ?? 10;

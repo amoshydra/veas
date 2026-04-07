@@ -5,6 +5,7 @@ import { useNodeGraphStore } from "../../../stores/nodeGraph.js";
 import { useContextMenu } from "./useContextMenu.js";
 import { NodeContextMenu } from "./NodeContextMenu.js";
 import { ConnectionHandle } from "./ConnectionHandle.js";
+import { resolvePreviewSource } from "../../../utils/preview.js";
 
 const ROTATION_ANGLES = [0, 90, 180, 270];
 
@@ -14,15 +15,8 @@ export function RotateNode({ id, data, selected }: NodeProps) {
   const error = data.error as string | undefined;
   const store = useNodeGraphStore();
 
-  const sourceNode = store.edges
-    .filter((e) => e.target === id && e.targetHandle === "video")
-    .map((e) => store.nodes.find((n) => n.id === e.source))
-    .find(Boolean);
-
-  const fileId = (config.fileId ||
-    sourceNode?.data?.config?.fileId ||
-    sourceNode?.data?.outputId) as string | undefined;
-  const hasFile = !!fileId;
+  const { fileId, isReady } = resolvePreviewSource(id, store.nodes, store.edges);
+  const hasFile = isReady && !!fileId;
 
   const angle = config.angle ?? 0;
   const rotationIndex = ROTATION_ANGLES.indexOf(angle);
